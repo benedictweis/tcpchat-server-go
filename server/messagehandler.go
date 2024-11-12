@@ -19,12 +19,15 @@ const (
 	Unknown CommandType = iota
 	ChangeName
 	PrivateMessage
+	CreateAccount
+	Login
+	ChangePassword
 	Quit
 )
 
 // String implements the string variants of CommandType
 func (c CommandType) String() string {
-	return [...]string{"unknown", "name", "msg", "quit"}[c]
+	return [...]string{"unknown", "name", "msg", "account", "login", "password", "quit"}[c]
 }
 
 // MatchCommandTypeStringToCommandType is used to mach a received command as a string to the CommandType used to communicate the command
@@ -47,12 +50,13 @@ type Command struct {
 // handleMessages handles all incoming messages
 func handleMessages(ctx context.Context, sessions <-chan domain.Session, textMessages <-chan TextMessage, commands <-chan Command) {
 	sessionRepository := domain.NewInMemorySessionRepository()
+	_ = domain.NewInMemoryUserRepository()
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case newSession := <-sessions:
-			log.Printf("info: recieved new session with sessionId %s\n", newSession.SessionId)
+			log.Printf("info: recieved new session with sessionId %s\n", newSession.Id)
 			newSession.MessagesToSession <- fmt.Sprintf("[server] Welcome to this server!\n")
 			sessionRepository.Add(newSession)
 		case textMessage := <-textMessages:
@@ -67,6 +71,15 @@ func handleMessages(ctx context.Context, sessions <-chan domain.Session, textMes
 				// TODO
 				session.MessagesToSession <- "[server] Unimplemented!\n"
 			case PrivateMessage:
+				// TODO
+				session.MessagesToSession <- "[server] Unimplemented!\n"
+			case CreateAccount:
+				// TODO
+				session.MessagesToSession <- "[server] Unimplemented!\n"
+			case Login:
+				// TODO
+				session.MessagesToSession <- "[server] Unimplemented!\n"
+			case ChangePassword:
 				// TODO
 				session.MessagesToSession <- "[server] Unimplemented!\n"
 			case Quit:

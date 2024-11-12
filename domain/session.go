@@ -2,7 +2,7 @@ package domain
 
 // Session represents a newly created session
 type Session struct {
-	SessionId         string
+	Id                string
 	MessagesToSession chan<- string
 	Close             chan<- interface{}
 }
@@ -22,7 +22,7 @@ func NewInMemorySessionRepository() *InMemorySessionRepository {
 }
 
 func (i *InMemorySessionRepository) Add(session Session) {
-	i.sessions[session.SessionId] = session
+	i.sessions[session.Id] = session
 }
 
 func (i *InMemorySessionRepository) Delete(sessionId string) (session Session, ok bool) {
