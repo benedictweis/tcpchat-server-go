@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	"tcpchat-server-go/domain"
 )
 
@@ -63,18 +64,59 @@ func handleMessages(ctx context.Context, sessions <-chan domain.Session, textMes
 			sessionRepository.Add(newSession)
 		case textMessage := <-textMessages:
 			log.Printf("info: recieved text message from %s, message: %s\n", textMessage.sessionId, textMessage.message)
+			session, sessionExists := sessionRepository.FindById(textMessage.sessionId)
+			if !sessionExists {
+				log.Printf("error: revieced a textMessage from an unknown session id: %s\n", textMessage.sessionId)
+				continue
+			}
+			userSession, userSessionExists := userSessionRepository.FindBySessionId(textMessage.sessionId)
+			if !userSessionExists {
+				log.Printf("info: on retrieving user info: not logged in with session: %s\n", textMessage.sessionId)
+				session.MessagesToSession <- "[server] User not logged in!\n"
+				continue
+			}
+			userName := userSession.UserName
+			otherSessions := sessionRepository.FindAllExceptBySessionId(session.Id)
+			for _, otherSession := range otherSessions {
+				otherSession.MessagesToSession <- fmt.Sprintf("[%s] %s\n", userName, textMessage.message)
+			}
 		case command := <-commands:
 			log.Printf("info: recieved command from %s, type: %v, arguments: %v\n", command.sessionId, command.commandType, command.arguments)
-			session, _ := sessionRepository.FindById(command.sessionId)
+			session, sessionExists := sessionRepository.FindById(command.sessionId)
+			if !sessionExists {
+				log.Printf("error: revieced a textMessage from an unknown session id: %s\n", command.sessionId)
+				continue
+			}
 			switch command.commandType {
 			case Unknown:
-				session.MessagesToSession <- "[server] Entered unknown command!\n"
+				session.MessagesToSession <- "[server] Unknown command!\n"
 			case ChangeName:
 				// TODO
 				session.MessagesToSession <- "[server] Unimplemented!\n"
 			case PrivateMessage:
-				// TODO
-				session.MessagesToSession <- "[server] Unimplemented!\n"
+				partnerUserName := command.arguments[0]
+				message := strings.Join(command.arguments[1:], " ")
+				userSession, userSessionExists := userSessionRepository.FindBySessionId(session.Id)
+				if !userSessionExists {
+					log.Printf("info: on retrieving user info: not logged in with session: %s\n", session.Id)
+					session.MessagesToSession <- "[server] User not logged in!\n"
+					continue
+				}
+				partnerUserSessions := userSessionRepository.FindByUserName(partnerUserName)
+				if len(partnerUserSessions) == 0 {
+					log.Printf("info: tried to send a message to an unknown user, session id: %s\n", session.Id)
+					session.MessagesToSession <- "[server] User does not exist!\n"
+					continue
+				}
+				userName := userSession.UserName
+				for _, partnerUserSession := range partnerUserSessions {
+					partnerSession, partnerSessionExists := sessionRepository.FindById(partnerUserSession.SessionId)
+					if !partnerSessionExists {
+						log.Printf("error: failed to retrieve partner session for partner user session: %s\n", partnerUserSession.SessionId)
+						continue
+					}
+					partnerSession.MessagesToSession <- fmt.Sprintf("[p %s] %s\n", userName, message)
+				}
 			case CreateAccount:
 				userName := command.arguments[0]
 				password := command.arguments[1]
@@ -123,6 +165,7 @@ func handleMessages(ctx context.Context, sessions <-chan domain.Session, textMes
 				session.MessagesToSession <- fmt.Sprintf("[server] sessionId: %s\n[server] userName:  %s\n", userSession.SessionId, userSession.UserName)
 			case Quit:
 				session.Close <- struct{}{}
+				userSessionRepository.DeleteBySessionId(command.sessionId)
 				sessionRepository.Delete(command.sessionId)
 			}
 		}

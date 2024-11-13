@@ -11,6 +11,7 @@ type SessionRepository interface {
 	Add(Session)
 	Delete(id string) (Session, bool)
 	FindById(id string) (Session, bool)
+	FindAllExceptBySessionId(id string) []Session
 }
 
 type InMemorySessionRepository struct {
@@ -36,4 +37,14 @@ func (i *InMemorySessionRepository) Delete(sessionId string) (session Session, o
 func (i *InMemorySessionRepository) FindById(id string) (session Session, ok bool) {
 	session, ok = i.sessions[id]
 	return
+}
+
+func (i *InMemorySessionRepository) FindAllExceptBySessionId(id string) []Session {
+	sessions := make([]Session, 0)
+	for _, session := range i.sessions {
+		if session.Id != id {
+			sessions = append(sessions, session)
+		}
+	}
+	return sessions
 }

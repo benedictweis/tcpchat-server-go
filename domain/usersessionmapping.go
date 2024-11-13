@@ -12,7 +12,7 @@ func NewUserSession(sessionId string, userName string) *UserSession {
 type UserSessionRepository interface {
 	Add(*UserSession)
 	FindBySessionId(string) (*UserSession, bool)
-	FindByUserName(string) ([]*UserSession, bool)
+	FindByUserName(string) []*UserSession
 	DeleteBySessionId(string) (*UserSession, bool)
 	DeleteByUserName(string) ([]*UserSession, bool)
 }
@@ -34,14 +34,14 @@ func (i InMemoryUserSessionRepository) FindBySessionId(sessionId string) (userSe
 	return
 }
 
-func (i InMemoryUserSessionRepository) FindByUserName(userName string) ([]*UserSession, bool) {
+func (i InMemoryUserSessionRepository) FindByUserName(userName string) []*UserSession {
 	userSessions := make([]*UserSession, 0)
 	for _, userSession := range i.userSessions {
 		if userSession.UserName == userName {
 			userSessions = append(userSessions, userSession)
 		}
 	}
-	return userSessions, true
+	return userSessions
 }
 
 func (i InMemoryUserSessionRepository) DeleteBySessionId(sessionId string) (userSession *UserSession, ok bool) {
@@ -52,16 +52,10 @@ func (i InMemoryUserSessionRepository) DeleteBySessionId(sessionId string) (user
 	return
 }
 
-func (i InMemoryUserSessionRepository) DeleteByUserName(userName string) ([]*UserSession, bool) {
-	userSessions, ok := i.FindByUserName(userName)
-	if !ok {
-		return nil, false
-	}
+func (i InMemoryUserSessionRepository) DeleteByUserName(userName string) []*UserSession {
+	userSessions := i.FindByUserName(userName)
 	for _, userSession := range i.userSessions {
-		_, ok = i.DeleteBySessionId(userSession.SessionId)
-		if !ok {
-			return userSessions, false
-		}
+		_, _ = i.DeleteBySessionId(userSession.SessionId)
 	}
-	return userSessions, true
+	return userSessions
 }
