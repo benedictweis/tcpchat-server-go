@@ -24,12 +24,13 @@ const (
 	Login
 	ChangePassword
 	Info
+	Who
 	Quit
 )
 
 // String implements the string variants of CommandType
 func (c CommandType) String() string {
-	return [...]string{"unknown", "name", "msg", "account", "login", "password", "info", "quit"}[c]
+	return [...]string{"unknown", "name", "msg", "acc", "login", "passwd", "info", "who", "quit"}[c]
 }
 
 // MatchCommandTypeStringToCommandType is used to mach a received command as a string to the CommandType used to communicate the command
@@ -91,14 +92,28 @@ func handleMessages(ctx context.Context, sessions <-chan domain.Session, textMes
 			case Unknown:
 				session.MessagesToSession <- "[server] Unknown command!\n"
 			case ChangeName:
-				// TODO
-				session.MessagesToSession <- "[server] Unimplemented!\n"
+				//TODO does not work
+				changedUserName := command.arguments[0]
+				userSession, userSessionExists := userSessionRepository.FindBySessionId(session.Id)
+				if !userSessionExists {
+					log.Printf("info: on changing user name, not logged in with session: %s\n", session.Id)
+					session.MessagesToSession <- "[server] User not logged in!\n"
+					continue
+				}
+				user, userExists := userRepository.FindByName(userSession.UserName)
+				if !userExists {
+					log.Printf("error: on changing user name, user does not exist for session id: %s\n", session.Id)
+					session.MessagesToSession <- "[server] Internal Error!\n"
+					continue
+				}
+				user.Name = changedUserName
+				session.MessagesToSession <- "[server] Changed user name!\n"
 			case PrivateMessage:
 				partnerUserName := command.arguments[0]
 				message := strings.Join(command.arguments[1:], " ")
 				userSession, userSessionExists := userSessionRepository.FindBySessionId(session.Id)
 				if !userSessionExists {
-					log.Printf("info: on retrieving user info: not logged in with session: %s\n", session.Id)
+					log.Printf("info: on retrieving user info, not logged in with session: %s\n", session.Id)
 					session.MessagesToSession <- "[server] User not logged in!\n"
 					continue
 				}
@@ -153,8 +168,26 @@ func handleMessages(ctx context.Context, sessions <-chan domain.Session, textMes
 				log.Printf("info: logged in user: %s\n", userName)
 				session.MessagesToSession <- "[server] Logged in!\n"
 			case ChangePassword:
-				// TODO
-				session.MessagesToSession <- "[server] Unimplemented!\n"
+				newPassword := command.arguments[0]
+				userSession, userSessionExists := userSessionRepository.FindBySessionId(session.Id)
+				if !userSessionExists {
+					log.Printf("info: on changing password, not logged in with session: %s\n", session.Id)
+					session.MessagesToSession <- "[server] User not logged in!\n"
+					continue
+				}
+				user, userExists := userRepository.FindByName(userSession.UserName)
+				if !userExists {
+					log.Printf("error: on changing password, user does not exist for session id: %s\n", session.Id)
+					session.MessagesToSession <- "[server] Internal error!\n"
+					continue
+				}
+				err := user.SetPassword(newPassword)
+				if !userExists {
+					log.Printf("error: on changing password: %v\n", err)
+					session.MessagesToSession <- "[server] Internal error!\n"
+					continue
+				}
+				session.MessagesToSession <- "[server] Changed password!\n"
 			case Info:
 				userSession, userSessionExists := userSessionRepository.FindBySessionId(command.sessionId)
 				if !userSessionExists {
@@ -163,6 +196,12 @@ func handleMessages(ctx context.Context, sessions <-chan domain.Session, textMes
 					continue
 				}
 				session.MessagesToSession <- fmt.Sprintf("[server] sessionId: %s\n[server] userName:  %s\n", userSession.SessionId, userSession.UserName)
+			case Who:
+				allUserNamesAsString := ""
+				for _, userSession := range userSessionRepository.GetAll() {
+					allUserNamesAsString += fmt.Sprintf("[server] %s\n", userSession.UserName)
+				}
+				session.MessagesToSession <- allUserNamesAsString
 			case Quit:
 				session.Close <- struct{}{}
 				userSessionRepository.DeleteBySessionId(command.sessionId)
