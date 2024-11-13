@@ -7,6 +7,15 @@ type User struct {
 	hashedPassword string
 }
 
+func NewUser(name, password string) (*User, error) {
+	user := User{name, ""}
+	err := user.SetPassword(password)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
 func (u *User) SetPassword(password string) error {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
 	if err != nil {
@@ -25,7 +34,7 @@ func (u *User) PasswordIsValid(password string) bool {
 }
 
 type UserRepository interface {
-	Add(User)
+	Add(User) bool
 	Delete(name string) (*User, bool)
 	FindByName(name string) (*User, bool)
 }
@@ -38,8 +47,12 @@ func NewInMemoryUserRepository() *InMemoryUserRepository {
 	return &InMemoryUserRepository{users: make(map[string]*User)}
 }
 
-func (i *InMemoryUserRepository) Add(user *User) {
+func (i *InMemoryUserRepository) Add(user *User) bool {
+	if _, ok := i.users[user.Name]; ok {
+		return false
+	}
 	i.users[user.Name] = user
+	return true
 }
 
 func (i *InMemoryUserRepository) Delete(name string) (user *User, ok bool) {
