@@ -2,9 +2,11 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"strings"
+	"tcpchat-server-go/application"
 	"tcpchat-server-go/domain"
 )
 
@@ -55,158 +57,128 @@ func handleMessages(ctx context.Context, sessions <-chan domain.Session, textMes
 	sessionRepository := domain.NewInMemorySessionRepository()
 	userRepository := domain.NewInMemoryUserRepository()
 	userSessionRepository := domain.NewInMemoryUserSessionRepository()
+	chatService := application.NewChatService(sessionRepository, userRepository, userSessionRepository)
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case newSession := <-sessions:
-			log.Printf("info: recieved new session with sessionId %s\n", newSession.Id)
-			newSession.MessagesToSession <- fmt.Sprintf("[server] Welcome to this server!\n")
-			sessionRepository.Add(newSession)
+			slog.Info("received new session", "sessionId", newSession.Id)
+			chatService.RegisterNewSession(newSession)
+			slog.Info("registered new session", "sessionId", newSession.Id)
+			chatService.SendMessageToSessionFromServer(newSession.Id, "Welcome to this server!")
 		case textMessage := <-textMessages:
-			log.Printf("info: recieved text message from %s, message: %s\n", textMessage.sessionId, textMessage.message)
-			session, sessionExists := sessionRepository.FindById(textMessage.sessionId)
-			if !sessionExists {
-				log.Printf("error: revieced a textMessage from an unknown session id: %s\n", textMessage.sessionId)
+			slog.Info("received text message", "sessionId", textMessage.sessionId, "textMessage", textMessage.message)
+			err := chatService.SendTextMessageToEveryone(textMessage.sessionId, textMessage.message)
+			if err != nil {
+				handleErrors(err, chatService, textMessage.sessionId)
 				continue
 			}
-			userSession, userSessionExists := userSessionRepository.FindBySessionId(textMessage.sessionId)
-			if !userSessionExists {
-				log.Printf("info: on retrieving user info: not logged in with session: %s\n", textMessage.sessionId)
-				session.MessagesToSession <- "[server] User not logged in!\n"
-				continue
-			}
-			userName := userSession.UserName
-			otherSessions := sessionRepository.FindAllExceptBySessionId(session.Id)
-			for _, otherSession := range otherSessions {
-				otherSession.MessagesToSession <- fmt.Sprintf("[%s] %s\n", userName, textMessage.message)
-			}
+			slog.Info("sent text message from to everyone", "sessionId", textMessage.sessionId, "textMessage", textMessage.message)
 		case command := <-commands:
-			log.Printf("info: recieved command from %s, type: %v, arguments: %v\n", command.sessionId, command.commandType, command.arguments)
-			session, sessionExists := sessionRepository.FindById(command.sessionId)
-			if !sessionExists {
-				log.Printf("error: revieced a textMessage from an unknown session id: %s\n", command.sessionId)
-				continue
-			}
+			slog.Info("received command", "sessionId", command.sessionId, "commandType", command.commandType, "commandArgs", command.arguments)
 			switch command.commandType {
 			case Unknown:
-				session.MessagesToSession <- "[server] Unknown command!\n"
+				slog.Info("received unknown command", "sessionId", command.sessionId, "commandType", command.commandType, "commandArgs", command.arguments)
+				chatService.SendMessageToSessionFromServer(command.sessionId, "Unknown command")
 			case ChangeName:
-				//TODO does not work
-				changedUserName := command.arguments[0]
-				userSession, userSessionExists := userSessionRepository.FindBySessionId(session.Id)
-				if !userSessionExists {
-					log.Printf("info: on changing user name, not logged in with session: %s\n", session.Id)
-					session.MessagesToSession <- "[server] User not logged in!\n"
+				if len(command.arguments) != 1 {
+					slog.Info("invalid number of arguments", "sessionId", command.sessionId, "commandType", command.commandType, "commandArgs", command.arguments)
+					chatService.SendMessageToSessionFromServer(command.sessionId, "Wrong number of arguments, usage: /name <new username>")
 					continue
 				}
-				user, userExists := userRepository.FindByName(userSession.UserName)
-				if !userExists {
-					log.Printf("error: on changing user name, user does not exist for session id: %s\n", session.Id)
-					session.MessagesToSession <- "[server] Internal Error!\n"
-					continue
-				}
-				user.Name = changedUserName
-				session.MessagesToSession <- "[server] Changed user name!\n"
-			case PrivateMessage:
-				partnerUserName := command.arguments[0]
-				message := strings.Join(command.arguments[1:], " ")
-				userSession, userSessionExists := userSessionRepository.FindBySessionId(session.Id)
-				if !userSessionExists {
-					log.Printf("info: on retrieving user info, not logged in with session: %s\n", session.Id)
-					session.MessagesToSession <- "[server] User not logged in!\n"
-					continue
-				}
-				partnerUserSessions := userSessionRepository.FindByUserName(partnerUserName)
-				if len(partnerUserSessions) == 0 {
-					log.Printf("info: tried to send a message to an unknown user, session id: %s\n", session.Id)
-					session.MessagesToSession <- "[server] User does not exist!\n"
-					continue
-				}
-				userName := userSession.UserName
-				for _, partnerUserSession := range partnerUserSessions {
-					partnerSession, partnerSessionExists := sessionRepository.FindById(partnerUserSession.SessionId)
-					if !partnerSessionExists {
-						log.Printf("error: failed to retrieve partner session for partner user session: %s\n", partnerUserSession.SessionId)
-						continue
-					}
-					partnerSession.MessagesToSession <- fmt.Sprintf("[p %s] %s\n", userName, message)
-				}
-			case CreateAccount:
-				userName := command.arguments[0]
-				password := command.arguments[1]
-				user, err := domain.NewUser(userName, password)
+				newUserName := command.arguments[0]
+				err := chatService.ChangeUserName(command.sessionId, newUserName)
 				if err != nil {
-					log.Printf("warn: failed to create user: %v\n", err)
-					session.MessagesToSession <- "[server] Failed to create user!\n"
+					handleErrors(err, chatService, command.sessionId)
 					continue
 				}
-				userExists := userRepository.Add(user)
-				if !userExists {
-					log.Printf("info: failed to create user %s, user already exists\n", userName)
-					session.MessagesToSession <- "[server] Failed to create user, user already exists!\n"
+				slog.Info("changed name of user", "sessionId", command.sessionId, "newUserName", newUserName)
+				chatService.SendMessageToSessionFromServer(command.sessionId, fmt.Sprintf("Changed username to %s", newUserName))
+			case PrivateMessage:
+				if len(command.arguments) < 2 {
+					slog.Info("invalid number of arguments", "sessionId", command.sessionId, "commandType", command.commandType, "commandArgs", command.arguments)
+					chatService.SendMessageToSessionFromServer(command.sessionId, "Wrong number of arguments, usage: /msg <username> <message...>")
 					continue
 				}
-				session.MessagesToSession <- "[server] Created new account, please login now!\n"
-			case Login:
+				messagePartnerUserName := command.arguments[0]
+				message := strings.Join(command.arguments[1:], " ")
+				err := chatService.SendPrivateMessage(command.sessionId, messagePartnerUserName, message)
+				if err != nil {
+					handleErrors(err, chatService, command.sessionId)
+					continue
+				}
+				slog.Info("sent private message", "sessionId", command.sessionId, "messagePartnerUserName", messagePartnerUserName)
+			case CreateAccount:
+				if len(command.arguments) != 2 {
+					slog.Info("invalid number of arguments", "sessionId", command.sessionId, "commandType", command.commandType, "commandArgs", command.arguments)
+					chatService.SendMessageToSessionFromServer(command.sessionId, "Wrong number of arguments, usage: /acc <username> <password>")
+					continue
+				}
 				userName := command.arguments[0]
 				password := command.arguments[1]
-				user, userExists := userRepository.FindByName(userName)
-				if !userExists {
-					log.Printf("info: failed to find user by name: %s\n", userName)
-					session.MessagesToSession <- "[server] User does not exist!\n"
+				err := chatService.CreateAccount(command.sessionId, userName, password)
+				if err != nil {
+					handleErrors(err, chatService, command.sessionId)
 					continue
 				}
-				passwordIsValid := user.PasswordIsValid(password)
-				if !passwordIsValid {
-					log.Printf("info: invalid password for user %s\n", userName)
-					session.MessagesToSession <- "[server] Invalid password!\n"
+				slog.Info("created new account", "userName", userName)
+				chatService.SendMessageToSessionFromServer(command.sessionId, "Created new account, please login now")
+			case Login:
+				if len(command.arguments) != 2 {
+					slog.Info("invalid number of arguments", "sessionId", command.sessionId, "commandType", command.commandType, "commandArgs", command.arguments)
+					chatService.SendMessageToSessionFromServer(command.sessionId, "Wrong number of arguments, usage: /login <username> <password>")
 					continue
 				}
-				userSession := domain.NewUserSession(command.sessionId, userName)
-				userSessionRepository.Add(userSession)
-				log.Printf("info: logged in user: %s\n", userName)
-				session.MessagesToSession <- "[server] Logged in!\n"
+				userName := command.arguments[0]
+				password := command.arguments[1]
+
+				err := chatService.Login(command.sessionId, userName, password)
+				if err != nil {
+					handleErrors(err, chatService, command.sessionId)
+					continue
+				}
+				slog.Info("logged in session", "sessionId", command.sessionId, "userName", userName)
+				chatService.SendMessageToSessionFromServer(command.sessionId, "Logged in")
 			case ChangePassword:
-				newPassword := command.arguments[0]
-				userSession, userSessionExists := userSessionRepository.FindBySessionId(session.Id)
-				if !userSessionExists {
-					log.Printf("info: on changing password, not logged in with session: %s\n", session.Id)
-					session.MessagesToSession <- "[server] User not logged in!\n"
+				if len(command.arguments) != 2 {
+					slog.Info("invalid number of arguments", "sessionId", command.sessionId, "commandType", command.commandType, "commandArgs", command.arguments)
+					chatService.SendMessageToSessionFromServer(command.sessionId, "Wrong number of arguments, usage: /passwd <old password> <new password>")
 					continue
 				}
-				user, userExists := userRepository.FindByName(userSession.UserName)
-				if !userExists {
-					log.Printf("error: on changing password, user does not exist for session id: %s\n", session.Id)
-					session.MessagesToSession <- "[server] Internal error!\n"
+				oldPassword := command.arguments[0]
+				newPassword := command.arguments[1]
+				err := chatService.ChangePassword(command.sessionId, oldPassword, newPassword)
+				if err != nil {
+					handleErrors(err, chatService, command.sessionId)
 					continue
 				}
-				err := user.SetPassword(newPassword)
-				if !userExists {
-					log.Printf("error: on changing password: %v\n", err)
-					session.MessagesToSession <- "[server] Internal error!\n"
-					continue
-				}
-				session.MessagesToSession <- "[server] Changed password!\n"
+				slog.Info("changed password of user associated with session", "sessionId", command.sessionId)
+				chatService.SendMessageToSessionFromServer(command.sessionId, "Changed Password")
 			case Info:
-				userSession, userSessionExists := userSessionRepository.FindBySessionId(command.sessionId)
-				if !userSessionExists {
-					log.Printf("info: on retrieving user info: not logged in with session: %s\n", command.sessionId)
-					session.MessagesToSession <- "[server] User not logged in!\n"
-					continue
-				}
-				session.MessagesToSession <- fmt.Sprintf("[server] sessionId: %s\n[server] userName:  %s\n", userSession.SessionId, userSession.UserName)
+				userName := chatService.GetUserNameForSessionId(command.sessionId)
+				slog.Info("served info", "sessionId", command.sessionId)
+				chatService.SendMessageToSessionFromServer(command.sessionId, fmt.Sprintf("sessionId: %s\n[server] userName:  %s\n", command.sessionId, userName))
 			case Who:
-				allUserNamesAsString := ""
-				for _, userSession := range userSessionRepository.GetAll() {
-					allUserNamesAsString += fmt.Sprintf("[server] %s\n", userSession.UserName)
+				for _, userName := range chatService.GetAllLoggedInUserNames() {
+					chatService.SendMessageToSessionFromServer(command.sessionId, userName)
 				}
-				session.MessagesToSession <- allUserNamesAsString
+				slog.Info("served who", "sessionId", command.sessionId)
 			case Quit:
-				session.Close <- struct{}{}
-				userSessionRepository.DeleteBySessionId(command.sessionId)
-				sessionRepository.Delete(command.sessionId)
+				chatService.QuitSession(command.sessionId)
+				slog.Info("quit session", "sessionId", command.sessionId)
 			}
 		}
+	}
+}
+
+func handleErrors(err error, chatService *application.ChatService, sessionId string) {
+	var userFriendlyError application.UserFriendlyError
+	if errors.As(err, &userFriendlyError) {
+		slog.Info("recovered from error", "err", err)
+		chatService.SendMessageToSessionFromServer(sessionId, userFriendlyError.UserFriendlyError())
+	} else {
+		slog.Error("internal server error", "err", err)
+		chatService.SendMessageToSessionFromServer(sessionId, "Internal server error")
 	}
 }

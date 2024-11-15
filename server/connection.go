@@ -2,8 +2,7 @@ package server
 
 import (
 	"context"
-	"github.com/google/uuid"
-	"log"
+	"log/slog"
 	"net"
 	"sync"
 	"tcpchat-server-go/domain"
@@ -24,7 +23,7 @@ func handleConnections(ctx context.Context, listener net.Listener, activeConnect
 			return
 		case connectionResult := <-connections:
 			if connectionResult.err != nil {
-				log.Printf("error: error accepting connection: %v", connectionResult.err)
+				slog.Error("error accepting connection", "err", connectionResult.err)
 				continue
 			}
 			go handleConnection(ctx, connectionResult.connection, activeConnections, sessions, messagesRead)
@@ -54,21 +53,22 @@ func generateConnections(ctx context.Context, listener net.Listener) <-chan Conn
 // handleConnection handles a single connection along with reading to and writing from the connection
 func handleConnection(ctx context.Context, connection net.Conn, activeConnections *sync.WaitGroup, sessions chan<- domain.Session, readMessages chan<- MessageResult) {
 	messagesToSession := make(chan string)
-	sessionId := uuid.New().String()
+	closeSession := make(chan interface{})
+	session := domain.NewSession(messagesToSession, closeSession)
+	slog.Info("new connection established", "sessionId", session.Id, "remoteAddr", connection.RemoteAddr())
 	defer func() {
-		log.Printf("info: closing connection with sessionId %s from %v", sessionId, connection.RemoteAddr())
+		slog.Info("closing session", "sessionId", session.Id, "remoteAddr", connection.RemoteAddr())
 		connection.Close()
 		activeConnections.Done()
 	}()
 	activeConnections.Add(1)
-	log.Printf("info: new connection established with sessionId %s from %v", sessionId, connection.RemoteAddr())
-	closeSession := make(chan interface{})
-	sessions <- domain.Session{sessionId, messagesToSession, closeSession}
+
+	sessions <- *session
 
 	localCtx, closeLocalCtx := context.WithCancel(ctx)
 	defer closeLocalCtx()
 
-	go handleRead(localCtx, connection, readMessages, sessionId)
+	go handleRead(localCtx, connection, readMessages, session.Id)
 	go handleWrite(localCtx, connection, messagesToSession)
 
 	select {

@@ -1,14 +1,18 @@
 package domain
 
-import "golang.org/x/crypto/bcrypt"
+import (
+	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
+)
 
 type User struct {
+	Id             string
 	Name           string
 	hashedPassword string
 }
 
 func NewUser(name, password string) (*User, error) {
-	user := User{name, ""}
+	user := User{uuid.New().String(), name, ""}
 	err := user.SetPassword(password)
 	if err != nil {
 		return nil, err
@@ -34,9 +38,11 @@ func (u *User) PasswordIsValid(password string) bool {
 }
 
 type UserRepository interface {
-	Add(User) bool
-	Delete(name string) (*User, bool)
-	FindByName(name string) (*User, bool)
+	Add(*User) bool
+	GetAll() []*User
+	FindById(string) (user *User, userExists bool)
+	FindByName(string) (user *User, userExists bool)
+	Delete(string) (user *User, userExists bool)
 }
 
 type InMemoryUserRepository struct {
@@ -48,22 +54,42 @@ func NewInMemoryUserRepository() *InMemoryUserRepository {
 }
 
 func (i *InMemoryUserRepository) Add(user *User) bool {
-	if _, ok := i.users[user.Name]; ok {
+	if _, userExists := i.users[user.Name]; userExists {
+		return false
+	}
+	if _, userExists := i.FindById(user.Id); userExists {
 		return false
 	}
 	i.users[user.Name] = user
 	return true
 }
 
-func (i *InMemoryUserRepository) Delete(name string) (user *User, ok bool) {
-	if user, ok = i.users[name]; !ok {
-		return
+func (i *InMemoryUserRepository) GetAll() []*User {
+	users := make([]*User, 0)
+	for _, user := range i.users {
+		users = append(users, user)
 	}
-	delete(i.users, name)
+	return users
+}
+
+func (i *InMemoryUserRepository) FindById(userId string) (*User, bool) {
+	for _, user := range i.users {
+		if user.Id == userId {
+			return user, true
+		}
+	}
+	return nil, false
+}
+
+func (i *InMemoryUserRepository) FindByName(name string) (user *User, userExists bool) {
+	user, userExists = i.users[name]
 	return
 }
 
-func (i *InMemoryUserRepository) FindByName(name string) (user *User, ok bool) {
-	user, ok = i.users[name]
+func (i *InMemoryUserRepository) Delete(name string) (user *User, userExists bool) {
+	if user, userExists = i.users[name]; !userExists {
+		return
+	}
+	delete(i.users, name)
 	return
 }

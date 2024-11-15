@@ -1,5 +1,7 @@
 package domain
 
+import "github.com/google/uuid"
+
 // Session represents a newly created session
 type Session struct {
 	Id                string
@@ -7,11 +9,15 @@ type Session struct {
 	Close             chan<- interface{}
 }
 
+func NewSession(messagesToSession chan<- string, close chan<- interface{}) *Session {
+	return &Session{uuid.New().String(), messagesToSession, close}
+}
+
 type SessionRepository interface {
-	Add(Session)
-	Delete(id string) (Session, bool)
-	FindById(id string) (Session, bool)
-	FindAllExceptBySessionId(id string) []Session
+	Add(Session) bool
+	FindById(string) (session Session, sessionExists bool)
+	FindAllExceptBySessionId(string) []Session
+	Delete(string) (session Session, sessionExists bool)
 }
 
 type InMemorySessionRepository struct {
@@ -22,8 +28,12 @@ func NewInMemorySessionRepository() *InMemorySessionRepository {
 	return &InMemorySessionRepository{sessions: make(map[string]Session)}
 }
 
-func (i *InMemorySessionRepository) Add(session Session) {
+func (i *InMemorySessionRepository) Add(session Session) bool {
+	if _, sessionExists := i.sessions[session.Id]; sessionExists {
+		return false
+	}
 	i.sessions[session.Id] = session
+	return true
 }
 
 func (i *InMemorySessionRepository) Delete(sessionId string) (session Session, ok bool) {

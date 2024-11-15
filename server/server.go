@@ -3,7 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"net"
 	"sync"
 	"tcpchat-server-go/domain"
@@ -24,6 +24,7 @@ func NewTCPChatServer(address string, port int) (*TCPChatServer, error) {
 
 // Start starts the TCPChatServer instance and returns when ctx is Done
 func (t *TCPChatServer) Start(ctx context.Context) error {
+	slog.Info("starting tcp chat server", "address", t.address.String())
 	listener, err := net.ListenTCP("tcp", &t.address)
 	if err != nil {
 		return err
@@ -37,9 +38,10 @@ func (t *TCPChatServer) Start(ctx context.Context) error {
 	go convertMessages(ctx, messagesRead, textMessages, commands)
 	go handleMessages(ctx, sessions, textMessages, commands)
 	go handleConnections(ctx, listener, &activeConnections, messagesRead, sessions)
+	slog.Info("tcp chat is up", "address", t.address.String())
 	<-ctx.Done()
-	log.Println("info: context is done, waiting for active connections to be closed")
+	slog.Info("context is done, waiting for active connections to be closed", "address", t.address.String())
 	activeConnections.Wait()
-	log.Println("info: active connections closed, stopping the server")
+	slog.Info("active connections closed, stopping the server", "address", t.address.String())
 	return nil
 }

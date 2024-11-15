@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"io"
-	"log"
+	"log/slog"
 	"strings"
 )
 
@@ -23,9 +23,9 @@ func convertMessages(ctx context.Context, incomingMessages <-chan MessageResult,
 			return
 		case incomingMessage := <-incomingMessages:
 			message := cleanIncomingMessageString(incomingMessage.message)
-			log.Printf("debug: incoming message: %v\n", message)
+			slog.Debug("incoming message", "message", message)
 			if incomingMessage.err != nil {
-				log.Printf("warn: incoming message error: %s\n", incomingMessage.err)
+				slog.Warn("incoming message error", "err", incomingMessage.err)
 				if errors.Is(incomingMessage.err, io.EOF) {
 					commands <- Command{sessionId: incomingMessage.sessionId, commandType: Quit, arguments: nil}
 				}
