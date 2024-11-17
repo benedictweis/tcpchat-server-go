@@ -48,8 +48,8 @@ type ErrMessagePartnerDoesNotExist struct {
 func NewErrMessagePartnerDoesNotExist(sessionId string, messagePartnerUserName string) *ErrMessagePartnerDoesNotExist {
 	return &ErrMessagePartnerDoesNotExist{NewBaseError(
 		sessionId,
-		fmt.Sprintf("session %s tried to message non existant partner %s", sessionId, messagePartnerUserName),
-		"your message partner does not seem to be logged in",
+		fmt.Sprintf("session %s tried to Message non existant partner %s", sessionId, messagePartnerUserName),
+		"your Message partner does not seem to be logged in",
 	)}
 }
 
@@ -60,8 +60,8 @@ type ErrMessagePartnerNotLoggedIn struct {
 func NewErrMessagePartnerNotLoggedIn(sessionId string, messagePartnerUserName string) *ErrMessagePartnerNotLoggedIn {
 	return &ErrMessagePartnerNotLoggedIn{NewBaseError(
 		sessionId,
-		fmt.Sprintf("session %s tried to message non logged in partner %s", sessionId, messagePartnerUserName),
-		"your message partner does not seem to be logged in",
+		fmt.Sprintf("session %s tried to Message non logged in partner %s", sessionId, messagePartnerUserName),
+		"your Message partner does not seem to be logged in",
 	)}
 }
 

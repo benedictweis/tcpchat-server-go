@@ -4,21 +4,21 @@ import (
 	"context"
 	"log/slog"
 	"os"
-	"tcpchat-server-go/server"
+	"tcpchat-server-go/plugin"
 )
 
 func main() {
 	setupLogging()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	tcpChatServer, err := server.NewTCPChatServer("localhost", 8080)
+	tcpChatServer, err := plugin.NewTCPChatServer("localhost", 8080)
 	if err != nil {
-		slog.Error("failed to initialize tcp chat server", "err", err)
+		slog.Error("failed to initialize tcp chat plugin", "err", err)
 		return
 	}
 	err = tcpChatServer.Start(ctx)
 	if err != nil {
-		slog.Error("error: failed to start tcp chat server", "err", err)
+		slog.Error("error: failed to start tcp chat plugin", "err", err)
 		return
 	}
 }

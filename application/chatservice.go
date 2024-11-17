@@ -17,7 +17,7 @@ func NewChatService(sessionRepository domain.SessionRepository, userRepository d
 }
 
 func (c ChatService) SendMessageToSessionFromServer(sessionId string, message string) {
-	c.sendMessageToSession(sessionId, fmt.Sprintf("[server] %s", message))
+	c.sendMessageToSession(sessionId, fmt.Sprintf("[plugin] %s", message))
 }
 
 func (c ChatService) sendMessageToSession(sessionId string, message string) {
@@ -35,7 +35,7 @@ func (c ChatService) RegisterNewSession(newSession domain.Session) {
 func (c ChatService) SendTextMessageToEveryone(sessionId, message string) error {
 	_, sessionExists := c.sessionRepository.FindById(sessionId)
 	if !sessionExists {
-		return errors.New(fmt.Sprintf("revieced a text message from an unknown session id: %s", sessionId))
+		return errors.New(fmt.Sprintf("revieced a text Message from an unknown session id: %s", sessionId))
 	}
 	userSession, userSessionExists := c.userSessionRepository.FindBySessionId(sessionId)
 	if !userSessionExists {

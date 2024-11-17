@@ -1,10 +1,11 @@
-package server
+package plugin
 
 import (
 	"context"
 	"log/slog"
 	"net"
 	"sync"
+	"tcpchat-server-go/application"
 	"tcpchat-server-go/domain"
 )
 
@@ -15,7 +16,7 @@ type ConnectionResult struct {
 }
 
 // handleConnections is used to couple a possible error when accepting a connection with its result
-func handleConnections(ctx context.Context, listener net.Listener, activeConnections *sync.WaitGroup, messagesRead chan<- MessageResult, sessions chan<- domain.Session) {
+func handleConnections(ctx context.Context, listener net.Listener, activeConnections *sync.WaitGroup, messagesRead chan<- application.MessageResult, sessions chan<- domain.Session) {
 	connections := generateConnections(ctx, listener)
 	for {
 		select {
@@ -51,7 +52,7 @@ func generateConnections(ctx context.Context, listener net.Listener) <-chan Conn
 }
 
 // handleConnection handles a single connection along with reading to and writing from the connection
-func handleConnection(ctx context.Context, connection net.Conn, activeConnections *sync.WaitGroup, sessions chan<- domain.Session, readMessages chan<- MessageResult) {
+func handleConnection(ctx context.Context, connection net.Conn, activeConnections *sync.WaitGroup, sessions chan<- domain.Session, readMessages chan<- application.MessageResult) {
 	messagesToSession := make(chan string)
 	closeSession := make(chan interface{})
 	session := domain.NewSession(messagesToSession, closeSession)

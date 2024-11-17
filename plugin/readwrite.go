@@ -1,21 +1,22 @@
-package server
+package plugin
 
 import (
 	"bufio"
 	"bytes"
 	"context"
 	"io"
+	"tcpchat-server-go/application"
 )
 
 // handleRead is used to read from a reader and return the result on a channel
-func handleRead(ctx context.Context, reader io.Reader, messages chan<- MessageResult, sessionId string) {
+func handleRead(ctx context.Context, reader io.Reader, messages chan<- application.MessageResult, sessionId string) {
 	bufioReader := bufio.NewReader(reader)
 	for {
 		line, err := bufioReader.ReadString('\n')
 		select {
 		case <-ctx.Done():
 			return
-		case messages <- MessageResult{sessionId, line, err}:
+		case messages <- application.MessageResult{SessionId: sessionId, Message: line, Err: err}:
 		}
 	}
 }

@@ -1,4 +1,4 @@
-package server
+package plugin
 
 import (
 	"context"
@@ -6,6 +6,8 @@ import (
 	"log/slog"
 	"net"
 	"sync"
+	"tcpchat-server-go/application"
+	"tcpchat-server-go/application/handlers"
 	"tcpchat-server-go/domain"
 )
 
@@ -24,24 +26,24 @@ func NewTCPChatServer(address string, port int) (*TCPChatServer, error) {
 
 // Start starts the TCPChatServer instance and returns when ctx is Done
 func (t *TCPChatServer) Start(ctx context.Context) error {
-	slog.Info("starting tcp chat server", "address", t.address.String())
+	slog.Info("starting tcp chat plugin", "address", t.address.String())
 	listener, err := net.ListenTCP("tcp", &t.address)
 	if err != nil {
 		return err
 	}
 	defer listener.Close()
-	messagesRead := make(chan MessageResult, 5) // Buffer to allow for bursts when sending messages
+	messagesRead := make(chan application.MessageResult, 5) // Buffer to allow for bursts when sending messages
 	sessions := make(chan domain.Session)
-	textMessages := make(chan TextMessage)
-	commands := make(chan Command)
+	textMessages := make(chan domain.TextMessage)
+	commands := make(chan domain.Command)
 	var activeConnections sync.WaitGroup
-	go convertMessages(ctx, messagesRead, textMessages, commands)
-	go handleMessages(ctx, sessions, textMessages, commands)
+	go application.ConvertMessages(ctx, messagesRead, textMessages, commands)
+	go handlers.HandleMessages(ctx, sessions, textMessages, commands)
 	go handleConnections(ctx, listener, &activeConnections, messagesRead, sessions)
 	slog.Info("tcp chat is up", "address", t.address.String())
 	<-ctx.Done()
 	slog.Info("context is done, waiting for active connections to be closed", "address", t.address.String())
 	activeConnections.Wait()
-	slog.Info("active connections closed, stopping the server", "address", t.address.String())
+	slog.Info("active connections closed, stopping the plugin", "address", t.address.String())
 	return nil
 }
