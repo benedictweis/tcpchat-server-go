@@ -33,18 +33,22 @@ func (t *TCPChatServer) Start(ctx context.Context) error {
 		return err
 	}
 	defer listener.Close()
-	messagesRead := make(chan application.MessageResult, 5) // Buffer to allow for bursts when sending messages
-	sessions := make(chan domain.Session)
-	textMessages := make(chan domain.TextMessage)
-	commands := make(chan domain.Command)
 	var activeConnections sync.WaitGroup
-	go application.ConvertMessages(ctx, messagesRead, textMessages, commands)
-	go handlers.HandleMessages(ctx, sessions, textMessages, commands)
-	go handleConnections(ctx, listener, &activeConnections, messagesRead, sessions)
+	t.createNecessaryGoroutines(ctx, listener, &activeConnections)
 	slog.Info("tcp chat is up", "address", t.address.String())
 	<-ctx.Done()
 	slog.Info("context is done, waiting for active connections to be closed", "address", t.address.String())
 	activeConnections.Wait()
 	slog.Info("active connections closed, stopping the plugin", "address", t.address.String())
 	return nil
+}
+
+func (t *TCPChatServer) createNecessaryGoroutines(ctx context.Context, listener net.Listener, activeConnections *sync.WaitGroup) {
+	messagesRead := make(chan application.MessageResult, 5) // Buffer to allow for bursts when sending messages
+	sessions := make(chan domain.Session)
+	textMessages := make(chan domain.TextMessage)
+	commands := make(chan domain.Command)
+	go application.ConvertMessages(ctx, messagesRead, textMessages, commands)
+	go handlers.HandleMessages(ctx, sessions, textMessages, commands)
+	go handleConnections(ctx, listener, activeConnections, messagesRead, sessions)
 }

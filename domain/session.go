@@ -4,7 +4,7 @@ import "github.com/google/uuid"
 
 // Session represents a newly created session.
 type Session struct {
-	Id                string
+	ID                string
 	MessagesToSession chan<- string
 	Close             chan<- interface{}
 }
@@ -15,8 +15,8 @@ func NewSession(messagesToSession chan<- string, close chan<- interface{}) *Sess
 
 type SessionRepository interface {
 	Add(Session) bool
-	FindById(string) (session Session, sessionExists bool)
-	FindAllExceptBySessionId(string) []Session
+	FindByID(string) (session Session, sessionExists bool)
+	FindAllExceptBySessionID(string) []Session
 	Delete(string) (session Session, sessionExists bool)
 }
 
@@ -29,30 +29,30 @@ func NewInMemorySessionRepository() *InMemorySessionRepository {
 }
 
 func (i *InMemorySessionRepository) Add(session Session) bool {
-	if _, sessionExists := i.sessions[session.Id]; sessionExists {
+	if _, sessionExists := i.sessions[session.ID]; sessionExists {
 		return false
 	}
-	i.sessions[session.Id] = session
+	i.sessions[session.ID] = session
 	return true
 }
 
-func (i *InMemorySessionRepository) Delete(sessionId string) (session Session, ok bool) {
-	if session, ok = i.sessions[sessionId]; !ok {
+func (i *InMemorySessionRepository) Delete(sessionID string) (session Session, ok bool) {
+	if session, ok = i.sessions[sessionID]; !ok {
 		return
 	}
-	delete(i.sessions, sessionId)
+	delete(i.sessions, sessionID)
 	return
 }
 
-func (i *InMemorySessionRepository) FindById(id string) (session Session, ok bool) {
+func (i *InMemorySessionRepository) FindByID(id string) (session Session, ok bool) {
 	session, ok = i.sessions[id]
 	return
 }
 
-func (i *InMemorySessionRepository) FindAllExceptBySessionId(id string) []Session {
+func (i *InMemorySessionRepository) FindAllExceptBySessionID(id string) []Session {
 	sessions := make([]Session, 0)
 	for _, session := range i.sessions {
-		if session.Id != id {
+		if session.ID != id {
 			sessions = append(sessions, session)
 		}
 	}

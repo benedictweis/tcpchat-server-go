@@ -5,7 +5,6 @@ import (
 	"log/slog"
 	"net"
 	"sync"
-
 	"tcpchat-server-go/application"
 	"tcpchat-server-go/domain"
 )
@@ -57,9 +56,9 @@ func handleConnection(ctx context.Context, connection net.Conn, activeConnection
 	messagesToSession := make(chan string)
 	closeSession := make(chan interface{})
 	session := domain.NewSession(messagesToSession, closeSession)
-	slog.Info("new connection established", "sessionId", session.Id, "remoteAddr", connection.RemoteAddr())
+	slog.Info("new connection established", "sessionID", session.ID, "remoteAddr", connection.RemoteAddr())
 	defer func() {
-		slog.Info("closing session", "sessionId", session.Id, "remoteAddr", connection.RemoteAddr())
+		slog.Info("closing session", "sessionID", session.ID, "remoteAddr", connection.RemoteAddr())
 		connection.Close()
 		activeConnections.Done()
 	}()
@@ -70,7 +69,7 @@ func handleConnection(ctx context.Context, connection net.Conn, activeConnection
 	localCtx, closeLocalCtx := context.WithCancel(ctx)
 	defer closeLocalCtx()
 
-	go handleRead(localCtx, connection, readMessages, session.Id)
+	go handleRead(localCtx, connection, readMessages, session.ID)
 	go handleWrite(localCtx, connection, messagesToSession)
 
 	select {

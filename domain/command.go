@@ -31,7 +31,7 @@ func MatchCommandTypeStringToCommandType(s string) CommandType {
 
 // Command represents a command a user wants to be executed.
 type Command struct {
-	SessionId   string
+	SessionID   string
 	CommandType CommandType
 	Arguments   []string
 }

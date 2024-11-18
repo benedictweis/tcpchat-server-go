@@ -11,14 +11,14 @@ import (
 )
 
 // handleRead is used to read from a reader and return the result on a channel.
-func handleRead(ctx context.Context, reader io.Reader, messages chan<- application.MessageResult, sessionId string) {
+func handleRead(ctx context.Context, reader io.Reader, messages chan<- application.MessageResult, sessionID string) {
 	bufioReader := bufio.NewReader(reader)
 	for {
 		line, err := bufioReader.ReadString('\n')
 		select {
 		case <-ctx.Done():
 			return
-		case messages <- application.MessageResult{SessionId: sessionId, Message: line, Err: err}:
+		case messages <- application.MessageResult{SessionID: sessionID, Message: line, Err: err}:
 		}
 	}
 }

@@ -6,7 +6,7 @@ import (
 )
 
 type User struct {
-	Id             string
+	ID             string
 	Name           string
 	hashedPassword string
 }
@@ -37,7 +37,7 @@ func (u *User) PasswordIsValid(password string) bool {
 type UserRepository interface {
 	Add(*User) bool
 	GetAll() []*User
-	FindById(string) (user *User, userExists bool)
+	FindByID(string) (user *User, userExists bool)
 	FindByName(string) (user *User, userExists bool)
 	Delete(string) (user *User, userExists bool)
 }
@@ -54,7 +54,7 @@ func (i *InMemoryUserRepository) Add(user *User) bool {
 	if _, userExists := i.users[user.Name]; userExists {
 		return false
 	}
-	if _, userExists := i.FindById(user.Id); userExists {
+	if _, userExists := i.FindByID(user.ID); userExists {
 		return false
 	}
 	i.users[user.Name] = user
@@ -69,9 +69,9 @@ func (i *InMemoryUserRepository) GetAll() []*User {
 	return users
 }
 
-func (i *InMemoryUserRepository) FindById(userId string) (*User, bool) {
+func (i *InMemoryUserRepository) FindByID(userID string) (*User, bool) {
 	for _, user := range i.users {
-		if user.Id == userId {
+		if user.ID == userID {
 			return user, true
 		}
 	}

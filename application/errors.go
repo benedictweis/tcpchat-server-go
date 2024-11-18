@@ -8,14 +8,14 @@ type UserFriendlyError interface {
 }
 
 type BaseError struct {
-	sessionId string
+	sessionID string
 	message   string
 	userMsg   string
 }
 
-func NewBaseError(sessionId, message, userMsg string) BaseError {
+func NewBaseError(sessionID, message, userMsg string) BaseError {
 	return BaseError{
-		sessionId: sessionId,
+		sessionID: sessionID,
 		message:   message,
 		userMsg:   userMsg,
 	}
@@ -33,10 +33,10 @@ type ErrSessionNotLoggedIn struct {
 	BaseError
 }
 
-func NewErrSessionNotLoggedIn(sessionId string) *ErrSessionNotLoggedIn {
+func NewErrSessionNotLoggedIn(sessionID string) *ErrSessionNotLoggedIn {
 	return &ErrSessionNotLoggedIn{NewBaseError(
-		sessionId,
-		fmt.Sprintf("session %s not logged in", sessionId),
+		sessionID,
+		fmt.Sprintf("session %s not logged in", sessionID),
 		"you are not logged in",
 	)}
 }
@@ -45,10 +45,10 @@ type ErrMessagePartnerDoesNotExist struct {
 	BaseError
 }
 
-func NewErrMessagePartnerDoesNotExist(sessionId string, messagePartnerUserName string) *ErrMessagePartnerDoesNotExist {
+func NewErrMessagePartnerDoesNotExist(sessionID string, messagePartnerUserName string) *ErrMessagePartnerDoesNotExist {
 	return &ErrMessagePartnerDoesNotExist{NewBaseError(
-		sessionId,
-		fmt.Sprintf("session %s tried to Message non existant partner %s", sessionId, messagePartnerUserName),
+		sessionID,
+		fmt.Sprintf("session %s tried to Message non existant partner %s", sessionID, messagePartnerUserName),
 		"your Message partner does not seem to be logged in",
 	)}
 }
@@ -57,10 +57,10 @@ type ErrMessagePartnerNotLoggedIn struct {
 	BaseError
 }
 
-func NewErrMessagePartnerNotLoggedIn(sessionId string, messagePartnerUserName string) *ErrMessagePartnerNotLoggedIn {
+func NewErrMessagePartnerNotLoggedIn(sessionID string, messagePartnerUserName string) *ErrMessagePartnerNotLoggedIn {
 	return &ErrMessagePartnerNotLoggedIn{NewBaseError(
-		sessionId,
-		fmt.Sprintf("session %s tried to Message non logged in partner %s", sessionId, messagePartnerUserName),
+		sessionID,
+		fmt.Sprintf("session %s tried to Message non logged in partner %s", sessionID, messagePartnerUserName),
 		"your Message partner does not seem to be logged in",
 	)}
 }
@@ -69,10 +69,10 @@ type ErrCouldNotCreateUser struct {
 	BaseError
 }
 
-func NewErrCouldNotCreateUser(sessionId string) *ErrCouldNotCreateUser {
+func NewErrCouldNotCreateUser(sessionID string) *ErrCouldNotCreateUser {
 	return &ErrCouldNotCreateUser{NewBaseError(
-		sessionId,
-		fmt.Sprintf("could not create user for session id: %s", sessionId),
+		sessionID,
+		fmt.Sprintf("could not create user for session id: %s", sessionID),
 		"could not create user, password is likely invalid",
 	)}
 }
@@ -81,10 +81,10 @@ type ErrUserNameAlreadyExists struct {
 	BaseError
 }
 
-func NewErrUserNameAlreadyExists(sessionId string, userName string) *ErrUserNameAlreadyExists {
+func NewErrUserNameAlreadyExists(sessionID string, userName string) *ErrUserNameAlreadyExists {
 	return &ErrUserNameAlreadyExists{NewBaseError(
-		sessionId,
-		fmt.Sprintf("session %s tried to create user %s that already exists", sessionId, userName),
+		sessionID,
+		fmt.Sprintf("session %s tried to create user %s that already exists", sessionID, userName),
 		"a user with that name already exists",
 	)}
 }
@@ -93,10 +93,10 @@ type ErrUserDoesNotExist struct {
 	BaseError
 }
 
-func NewErrUserDoesNotExist(sessionId string, userName string) *ErrUserDoesNotExist {
+func NewErrUserDoesNotExist(sessionID string, userName string) *ErrUserDoesNotExist {
 	return &ErrUserDoesNotExist{NewBaseError(
-		sessionId,
-		fmt.Sprintf("session %s tried to access user %s that does not exist", sessionId, userName),
+		sessionID,
+		fmt.Sprintf("session %s tried to access user %s that does not exist", sessionID, userName),
 		"a user with that name does not exist",
 	)}
 }
@@ -105,10 +105,10 @@ type ErrPasswordIsInvalid struct {
 	BaseError
 }
 
-func NewErrPasswordIsInvalid(sessionId string) *ErrPasswordIsInvalid {
+func NewErrPasswordIsInvalid(sessionID string) *ErrPasswordIsInvalid {
 	return &ErrPasswordIsInvalid{NewBaseError(
-		sessionId,
-		fmt.Sprintf("session %s entered invalid password", sessionId),
+		sessionID,
+		fmt.Sprintf("session %s entered invalid password", sessionID),
 		"wrong password",
 	)}
 }

@@ -1,21 +1,21 @@
 package domain
 
 type UserSession struct {
-	UserId    string
-	SessionId string
+	UserID    string
+	SessionID string
 }
 
-func NewUserSession(userId string, sessionId string) *UserSession {
-	return &UserSession{userId, sessionId}
+func NewUserSession(userID string, sessionID string) *UserSession {
+	return &UserSession{userID, sessionID}
 }
 
 type UserSessionRepository interface {
 	Add(*UserSession)
 	GetAll() []*UserSession
-	FindBySessionId(string) (*UserSession, bool)
-	FindByUserId(string) []*UserSession
-	DeleteBySessionId(string) (*UserSession, bool)
-	DeleteByUserId(string) []*UserSession
+	FindBySessionID(string) (*UserSession, bool)
+	FindByUserID(string) []*UserSession
+	DeleteBySessionID(string) (*UserSession, bool)
+	DeleteByUserID(string) []*UserSession
 }
 
 type InMemoryUserSessionRepository struct {
@@ -27,7 +27,7 @@ func NewInMemoryUserSessionRepository() *InMemoryUserSessionRepository {
 }
 
 func (i *InMemoryUserSessionRepository) Add(session *UserSession) {
-	i.userSessions[session.SessionId] = session
+	i.userSessions[session.SessionID] = session
 }
 
 func (i *InMemoryUserSessionRepository) GetAll() []*UserSession {
@@ -38,33 +38,33 @@ func (i *InMemoryUserSessionRepository) GetAll() []*UserSession {
 	return allUserSessions
 }
 
-func (i *InMemoryUserSessionRepository) FindBySessionId(sessionId string) (userSession *UserSession, ok bool) {
-	userSession, ok = i.userSessions[sessionId]
+func (i *InMemoryUserSessionRepository) FindBySessionID(sessionID string) (userSession *UserSession, ok bool) {
+	userSession, ok = i.userSessions[sessionID]
 	return
 }
 
-func (i *InMemoryUserSessionRepository) FindByUserId(userId string) []*UserSession {
+func (i *InMemoryUserSessionRepository) FindByUserID(userID string) []*UserSession {
 	userSessions := make([]*UserSession, 0)
 	for _, userSession := range i.userSessions {
-		if userSession.UserId == userId {
+		if userSession.UserID == userID {
 			userSessions = append(userSessions, userSession)
 		}
 	}
 	return userSessions
 }
 
-func (i *InMemoryUserSessionRepository) DeleteBySessionId(sessionId string) (userSession *UserSession, ok bool) {
-	if userSession, ok = i.userSessions[sessionId]; !ok {
+func (i *InMemoryUserSessionRepository) DeleteBySessionID(sessionID string) (userSession *UserSession, ok bool) {
+	if userSession, ok = i.userSessions[sessionID]; !ok {
 		return
 	}
-	delete(i.userSessions, sessionId)
+	delete(i.userSessions, sessionID)
 	return
 }
 
-func (i *InMemoryUserSessionRepository) DeleteByUserId(userId string) []*UserSession {
-	userSessions := i.FindByUserId(userId)
+func (i *InMemoryUserSessionRepository) DeleteByUserID(userID string) []*UserSession {
+	userSessions := i.FindByUserID(userID)
 	for _, userSession := range i.userSessions {
-		_, _ = i.DeleteBySessionId(userSession.SessionId)
+		_, _ = i.DeleteBySessionID(userSession.SessionID)
 	}
 	return userSessions
 }

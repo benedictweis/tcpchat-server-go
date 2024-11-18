@@ -12,7 +12,7 @@ import (
 
 // MessageResult is used to couple a possible error when sending a Message.
 type MessageResult struct {
-	SessionId string
+	SessionID string
 	Message   string
 	Err       error
 }
@@ -29,18 +29,18 @@ func ConvertMessages(ctx context.Context, incomingMessages <-chan MessageResult,
 			if incomingMessage.Err != nil {
 				slog.Warn("incoming Message error", "Err", incomingMessage.Err)
 				if errors.Is(incomingMessage.Err, io.EOF) {
-					commands <- domain.Command{SessionId: incomingMessage.SessionId, CommandType: domain.Quit, Arguments: nil}
+					commands <- domain.Command{SessionID: incomingMessage.SessionID, CommandType: domain.Quit, Arguments: nil}
 				}
 				continue
 			}
 			if strings.HasPrefix(message, "/") {
 				command := strings.TrimPrefix(message, "/")
-				commandSplit := strings.Split(command, " ")
+				commandSplit := strings.Fields(command)
 				commandType := commandSplit[0]
 				commandArgs := commandSplit[1:]
-				commands <- domain.Command{SessionId: incomingMessage.SessionId, CommandType: domain.MatchCommandTypeStringToCommandType(commandType), Arguments: commandArgs}
+				commands <- domain.Command{SessionID: incomingMessage.SessionID, CommandType: domain.MatchCommandTypeStringToCommandType(commandType), Arguments: commandArgs}
 			} else {
-				textMessages <- domain.TextMessage{SessionId: incomingMessage.SessionId, Message: message}
+				textMessages <- domain.TextMessage{SessionID: incomingMessage.SessionID, Message: message}
 			}
 		}
 	}

@@ -1,6 +1,6 @@
 # Main verify target that runs all checks
 .PHONY: verify
-verify: clean build format-check lint-check
+verify: clean build format-check lint-clean lint-check
 
 # Clean target to remove build artifacts
 .PHONY: clean
@@ -32,6 +32,14 @@ format-check:
 format:
 	@echo "Formatting files..."
 	gofmt -w .
+
+lint-clean:
+	@echo "Running linter checks..."
+	@command -v golangci-lint >/dev/null 2>&1 || { \
+		echo "golangci-lint is not installed. Please install it first."; \
+		exit 1; \
+	}
+	golangci-lint cache clean
 
 # Lint-check target to analyze code with linter
 .PHONY: lint-check
