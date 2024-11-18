@@ -2,11 +2,12 @@ package handlers
 
 import (
 	"context"
+
 	"tcpchat-server-go/application"
 	"tcpchat-server-go/domain"
 )
 
-// HandleMessages handles all incoming messages
+// HandleMessages handles all incoming messages.
 func HandleMessages(ctx context.Context, sessions <-chan domain.Session, textMessages <-chan domain.TextMessage, commands <-chan domain.Command) {
 	sessionRepository := domain.NewInMemorySessionRepository()
 	userRepository := domain.NewInMemoryUserRepository()

@@ -5,17 +5,18 @@ import (
 	"log/slog"
 	"net"
 	"sync"
+
 	"tcpchat-server-go/application"
 	"tcpchat-server-go/domain"
 )
 
-// ConnectionResult is used to couple a possible error when accepting a connection with its result
+// ConnectionResult is used to couple a possible error when accepting a connection with its result.
 type ConnectionResult struct {
 	connection net.Conn
 	err        error
 }
 
-// handleConnections is used to couple a possible error when accepting a connection with its result
+// handleConnections is used to couple a possible error when accepting a connection with its result.
 func handleConnections(ctx context.Context, listener net.Listener, activeConnections *sync.WaitGroup, messagesRead chan<- application.MessageResult, sessions chan<- domain.Session) {
 	connections := generateConnections(ctx, listener)
 	for {
@@ -32,7 +33,7 @@ func handleConnections(ctx context.Context, listener net.Listener, activeConnect
 	}
 }
 
-// generateConnections is used to accept incoming connections and send them on to a channel
+// generateConnections is used to accept incoming connections and send them on to a channel.
 func generateConnections(ctx context.Context, listener net.Listener) <-chan ConnectionResult {
 	connections := make(chan ConnectionResult, 5) // Buffer of 5 to allow minor burst handling
 
@@ -51,7 +52,7 @@ func generateConnections(ctx context.Context, listener net.Listener) <-chan Conn
 	return connections
 }
 
-// handleConnection handles a single connection along with reading to and writing from the connection
+// handleConnection handles a single connection along with reading to and writing from the connection.
 func handleConnection(ctx context.Context, connection net.Conn, activeConnections *sync.WaitGroup, sessions chan<- domain.Session, readMessages chan<- application.MessageResult) {
 	messagesToSession := make(chan string)
 	closeSession := make(chan interface{})
@@ -76,6 +77,4 @@ func handleConnection(ctx context.Context, connection net.Conn, activeConnection
 	case <-ctx.Done():
 	case <-closeSession:
 	}
-
-	return
 }

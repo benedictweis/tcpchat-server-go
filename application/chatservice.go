@@ -1,8 +1,8 @@
 package application
 
 import (
-	"errors"
 	"fmt"
+
 	"tcpchat-server-go/domain"
 )
 
@@ -35,7 +35,7 @@ func (c ChatService) RegisterNewSession(newSession domain.Session) {
 func (c ChatService) SendTextMessageToEveryone(sessionId, message string) error {
 	_, sessionExists := c.sessionRepository.FindById(sessionId)
 	if !sessionExists {
-		return errors.New(fmt.Sprintf("revieced a text Message from an unknown session id: %s", sessionId))
+		return fmt.Errorf("revieced a text Message from an unknown session id: %s", sessionId)
 	}
 	userSession, userSessionExists := c.userSessionRepository.FindBySessionId(sessionId)
 	if !userSessionExists {
@@ -44,7 +44,7 @@ func (c ChatService) SendTextMessageToEveryone(sessionId, message string) error 
 	userId := userSession.UserId
 	user, userExists := c.userRepository.FindById(userId)
 	if !userExists {
-		return errors.New(fmt.Sprintf("user was not found, userId: %s", userId))
+		return fmt.Errorf("user was not found, userId: %s", userId)
 	}
 	otherSessions := c.sessionRepository.FindAllExceptBySessionId(sessionId)
 	for _, otherSession := range otherSessions {
@@ -60,7 +60,7 @@ func (c ChatService) ChangeUserName(sessionId string, newUserName string) error 
 	}
 	user, userExists := c.userRepository.FindById(userSession.UserId)
 	if !userExists {
-		return errors.New(fmt.Sprintf("user was not found, userId: %s", userSession.UserId))
+		return fmt.Errorf("user was not found, userId: %s", userSession.UserId)
 	}
 	user.Name = newUserName
 	return nil
@@ -73,7 +73,7 @@ func (c ChatService) SendPrivateMessage(sessionId, messagePartnerUserName, messa
 	}
 	user, userExists := c.userRepository.FindById(userSession.UserId)
 	if !userExists {
-		return errors.New(fmt.Sprintf("user was not found, userId: %s", userSession.UserId))
+		return fmt.Errorf("user was not found, userId: %s", userSession.UserId)
 	}
 	messagePartnerUser, messagePartnerUserExists := c.userRepository.FindByName(messagePartnerUserName)
 	if !messagePartnerUserExists {
@@ -122,7 +122,7 @@ func (c ChatService) ChangePassword(sessionId, oldPassword, newPassword string) 
 	}
 	user, userExists := c.userRepository.FindById(userSession.UserId)
 	if !userExists {
-		return errors.New(fmt.Sprintf("user was not found, userId: %s", userSession.UserId))
+		return fmt.Errorf("user was not found, userId: %s", userSession.UserId)
 	}
 	if !user.PasswordIsValid(oldPassword) {
 		return NewErrPasswordIsInvalid(sessionId)

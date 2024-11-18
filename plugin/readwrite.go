@@ -5,10 +5,12 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"log/slog"
+
 	"tcpchat-server-go/application"
 )
 
-// handleRead is used to read from a reader and return the result on a channel
+// handleRead is used to read from a reader and return the result on a channel.
 func handleRead(ctx context.Context, reader io.Reader, messages chan<- application.MessageResult, sessionId string) {
 	bufioReader := bufio.NewReader(reader)
 	for {
@@ -21,14 +23,17 @@ func handleRead(ctx context.Context, reader io.Reader, messages chan<- applicati
 	}
 }
 
-// handleWrite is used to write from a channel to a writer
+// handleWrite is used to write from a channel to a writer.
 func handleWrite(ctx context.Context, writer io.Writer, messages <-chan string) {
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case message := <-messages:
-			io.Copy(writer, bytes.NewBuffer([]byte(message)))
+			_, err := io.Copy(writer, bytes.NewBuffer([]byte(message)))
+			if err != nil {
+				slog.Warn("write error", "err", err)
+			}
 		}
 	}
 }

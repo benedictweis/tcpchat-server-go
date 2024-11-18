@@ -2,7 +2,7 @@ package domain
 
 import "github.com/google/uuid"
 
-// Session represents a newly created session
+// Session represents a newly created session.
 type Session struct {
 	Id                string
 	MessagesToSession chan<- string

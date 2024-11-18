@@ -6,17 +6,18 @@ import (
 	"io"
 	"log/slog"
 	"strings"
+
 	"tcpchat-server-go/domain"
 )
 
-// MessageResult is used to couple a possible error when sending a Message
+// MessageResult is used to couple a possible error when sending a Message.
 type MessageResult struct {
 	SessionId string
 	Message   string
 	Err       error
 }
 
-// ConvertMessages converts incoming messages into their respective internal types
+// ConvertMessages converts incoming messages into their respective internal types.
 func ConvertMessages(ctx context.Context, incomingMessages <-chan MessageResult, textMessages chan<- domain.TextMessage, commands chan<- domain.Command) {
 	for {
 		select {
@@ -45,7 +46,7 @@ func ConvertMessages(ctx context.Context, incomingMessages <-chan MessageResult,
 	}
 }
 
-// cleanIncomingMessageString is a helper function to clean strings that were received by the client
+// cleanIncomingMessageString is a helper function to clean strings that were received by the client.
 func cleanIncomingMessageString(message string) string {
 	return strings.TrimSpace(strings.TrimSuffix(strings.TrimSuffix(message, "\n"), "\r"))
 }

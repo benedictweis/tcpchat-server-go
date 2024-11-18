@@ -31,10 +31,7 @@ func (u *User) SetPassword(password string) error {
 
 func (u *User) PasswordIsValid(password string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(u.hashedPassword), []byte(password))
-	if err != nil {
-		return false
-	}
-	return true
+	return err == nil
 }
 
 type UserRepository interface {
