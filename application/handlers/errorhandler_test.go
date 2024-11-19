@@ -6,6 +6,7 @@
 package handlers
 
 import (
+	"fmt"
 	. "github.com/onsi/ginkgo/v2"
 )
 
@@ -15,6 +16,7 @@ var _ = Describe("Error Handler", func() {
 	Describe("#handleErrors", func() {
 		Context("when the error is a UserFriendlyError", func() {
 			It("should be sent to the session as a UserFriendlyError", func() {
+				handleErrors(fmt.Errorf("hi, this is an error"), nil, "1234")
 			})
 		})
 

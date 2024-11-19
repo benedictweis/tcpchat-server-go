@@ -1,6 +1,6 @@
 # Main verify target that runs all checks
 .PHONY: verify
-verify: clean build license-check format-check test lint-clean lint-check
+verify: clean build license-check format-check test lint-clean lint-check coverage
 
 # Clean target to remove build artifacts
 .PHONY: clean
@@ -68,6 +68,12 @@ lint-check: installed-linter
 lint-fix: installed-linter
 	@echo "Fixing linting issues..."
 	golangci-lint run --fix
+
+# Coverage target to check global project code coverage
+.PHONY: coverage
+coverage:
+	@echo "Fixing linting issues..."
+	sh ./hack/coverage.sh 70
 
 # Installed-linter check that the linter is installed
 .PHONY: installed-linter
