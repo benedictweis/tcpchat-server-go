@@ -1,3 +1,8 @@
+// Copyright (c) 2024 Benedict Weis. All rights reserved.
+//
+// This work is licensed under the terms of the MIT license.
+// For a copy, see <https://opensource.org/licenses/MIT>.
+
 package handlers
 
 import (
@@ -13,7 +18,7 @@ func handleErrors(err error, chatService *application.ChatService, sessionID str
 		slog.Info("recovered from error", "err", err)
 		chatService.SendMessageToSessionFromServer(sessionID, userFriendlyError.UserFriendlyError())
 	} else {
-		slog.Error("internal plugin error", "err", err)
-		chatService.SendMessageToSessionFromServer(sessionID, "Internal plugin error")
+		slog.Error("internal server error", "err", err)
+		chatService.SendMessageToSessionFromServer(sessionID, "internal server error")
 	}
 }

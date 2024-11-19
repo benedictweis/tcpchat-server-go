@@ -1,3 +1,8 @@
+// Copyright (c) 2024 Benedict Weis. All rights reserved.
+//
+// This work is licensed under the terms of the MIT license.
+// For a copy, see <https://opensource.org/licenses/MIT>.
+
 package domain
 
 import (
@@ -21,6 +26,7 @@ func NewUser(name, password string) (*User, error) {
 }
 
 func (u *User) SetPassword(password string) error {
+	// TODO add password validation
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
 	if err != nil {
 		return err

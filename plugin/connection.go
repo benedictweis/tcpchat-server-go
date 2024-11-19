@@ -1,3 +1,8 @@
+// Copyright (c) 2024 Benedict Weis. All rights reserved.
+//
+// This work is licensed under the terms of the MIT license.
+// For a copy, see <https://opensource.org/licenses/MIT>.
+
 package plugin
 
 import (
@@ -5,6 +10,7 @@ import (
 	"log/slog"
 	"net"
 	"sync"
+
 	"tcpchat-server-go/application"
 	"tcpchat-server-go/domain"
 )
