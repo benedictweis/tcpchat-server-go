@@ -1,4 +1,4 @@
-module tcpchat-server-go
+module github.com/benedictweis/tcpchat-server-go
 
 go 1.23.2
 
@@ -14,6 +14,7 @@ require (
 	github.com/google/pprof v0.0.0-20241029153458-d1b30febd7db // indirect
 	github.com/onsi/ginkgo/v2 v2.21.0 // indirect
 	github.com/onsi/gomega v1.35.1 // indirect
+	go.uber.org/mock v0.5.0 // indirect
 	golang.org/x/net v0.30.0 // indirect
 	golang.org/x/sys v0.27.0 // indirect
 	golang.org/x/text v0.20.0 // indirect

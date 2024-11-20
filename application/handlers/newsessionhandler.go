@@ -8,11 +8,11 @@ package handlers
 import (
 	"log/slog"
 
-	"tcpchat-server-go/application"
-	"tcpchat-server-go/domain"
+	"github.com/benedictweis/tcpchat-server-go/application"
+	"github.com/benedictweis/tcpchat-server-go/domain"
 )
 
-func HandleNewSession(newSession domain.Session, chatService *application.ChatService) {
+func HandleNewSession(newSession domain.Session, chatService *application.BasicChatService) {
 	slog.Info("received new session", "sessionID", newSession.ID)
 	chatService.RegisterNewSession(newSession)
 	slog.Info("registered new session", "sessionID", newSession.ID)

@@ -11,8 +11,8 @@ import (
 	"net"
 	"sync"
 
-	"tcpchat-server-go/application"
-	"tcpchat-server-go/domain"
+	"github.com/benedictweis/tcpchat-server-go/application"
+	"github.com/benedictweis/tcpchat-server-go/domain"
 )
 
 // ConnectionResult is used to couple a possible error when accepting a connection with its result.

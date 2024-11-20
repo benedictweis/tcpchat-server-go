@@ -10,7 +10,7 @@ import (
 	"log/slog"
 	"os"
 
-	"tcpchat-server-go/plugin"
+	"github.com/benedictweis/tcpchat-server-go/plugin"
 )
 
 func main() {

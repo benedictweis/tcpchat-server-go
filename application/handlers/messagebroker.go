@@ -8,8 +8,8 @@ package handlers
 import (
 	"context"
 
-	"tcpchat-server-go/application"
-	"tcpchat-server-go/domain"
+	"github.com/benedictweis/tcpchat-server-go/application"
+	"github.com/benedictweis/tcpchat-server-go/domain"
 )
 
 // HandleMessages handles all incoming messages.

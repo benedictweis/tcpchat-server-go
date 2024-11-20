@@ -10,17 +10,17 @@ import (
 	"log/slog"
 	"strings"
 
-	"tcpchat-server-go/application"
-	"tcpchat-server-go/domain"
+	"github.com/benedictweis/tcpchat-server-go/application"
+	"github.com/benedictweis/tcpchat-server-go/domain"
 )
 
-func HandleCommand(command domain.Command, chatService *application.ChatService) {
+func HandleCommand(command domain.Command, chatService *application.BasicChatService) {
 	slog.Info("received command", "sessionID", command.SessionID, "commandType", command.CommandType, "commandArgs", command.Arguments)
 	matchCommandTypeToFunc(command.CommandType)(command, chatService)
 }
 
-func matchCommandTypeToFunc(commandType domain.CommandType) func(command domain.Command, chatService *application.ChatService) {
-	handlers := []func(command domain.Command, chatService *application.ChatService){
+func matchCommandTypeToFunc(commandType domain.CommandType) func(command domain.Command, chatService *application.BasicChatService) {
+	handlers := []func(command domain.Command, chatService *application.BasicChatService){
 		handleUnknownCommand,        // 0
 		handleChangeNameCommand,     // 1
 		handlePrivateMessageCommand, // 2
@@ -40,12 +40,12 @@ func matchCommandTypeToFunc(commandType domain.CommandType) func(command domain.
 	return handlers[commandType]
 }
 
-func handleUnknownCommand(command domain.Command, chatService *application.ChatService) {
+func handleUnknownCommand(command domain.Command, chatService *application.BasicChatService) {
 	slog.Info("received unknown command", "sessionID", command.SessionID, "commandType", command.CommandType, "commandArgs", command.Arguments)
 	chatService.SendMessageToSessionFromServer(command.SessionID, "Unknown command")
 }
 
-func handleChangeNameCommand(command domain.Command, chatService *application.ChatService) {
+func handleChangeNameCommand(command domain.Command, chatService *application.BasicChatService) {
 	if len(command.Arguments) != 1 {
 		slog.Info("invalid number of arguments", "sessionID", command.SessionID, "commandType", command.CommandType, "commandArgs", command.Arguments)
 		chatService.SendMessageToSessionFromServer(command.SessionID, "Wrong number of arguments, usage: /name <new username>")
@@ -61,7 +61,7 @@ func handleChangeNameCommand(command domain.Command, chatService *application.Ch
 	chatService.SendMessageToSessionFromServer(command.SessionID, fmt.Sprintf("Changed username to %s", newUserName))
 }
 
-func handlePrivateMessageCommand(command domain.Command, chatService *application.ChatService) {
+func handlePrivateMessageCommand(command domain.Command, chatService *application.BasicChatService) {
 	if len(command.Arguments) < 2 {
 		slog.Info("invalid number of arguments", "sessionID", command.SessionID, "commandType", command.CommandType, "commandArgs", command.Arguments)
 		chatService.SendMessageToSessionFromServer(command.SessionID, "Wrong number of arguments, usage: /msg <username> <message...>")
@@ -77,7 +77,7 @@ func handlePrivateMessageCommand(command domain.Command, chatService *applicatio
 	slog.Info("sent private message", "sessionID", command.SessionID, "messagePartnerUserName", messagePartnerUserName)
 }
 
-func handleCreateAccountCommand(command domain.Command, chatService *application.ChatService) {
+func handleCreateAccountCommand(command domain.Command, chatService *application.BasicChatService) {
 	if len(command.Arguments) != 2 {
 		slog.Info("invalid number of arguments", "sessionID", command.SessionID, "commandType", command.CommandType, "commandArgs", command.Arguments)
 		chatService.SendMessageToSessionFromServer(command.SessionID, "Wrong number of arguments, usage: /acc <username> <password>")
@@ -94,7 +94,7 @@ func handleCreateAccountCommand(command domain.Command, chatService *application
 	chatService.SendMessageToSessionFromServer(command.SessionID, "Created new account, please login now")
 }
 
-func handleLoginCommand(command domain.Command, chatService *application.ChatService) {
+func handleLoginCommand(command domain.Command, chatService *application.BasicChatService) {
 	if len(command.Arguments) != 2 {
 		slog.Info("invalid number of arguments", "sessionID", command.SessionID, "commandType", command.CommandType, "commandArgs", command.Arguments)
 		chatService.SendMessageToSessionFromServer(command.SessionID, "Wrong number of arguments, usage: /login <username> <password>")
@@ -112,7 +112,7 @@ func handleLoginCommand(command domain.Command, chatService *application.ChatSer
 	chatService.SendMessageToSessionFromServer(command.SessionID, "Logged in")
 }
 
-func handleChangePasswordCommand(command domain.Command, chatService *application.ChatService) {
+func handleChangePasswordCommand(command domain.Command, chatService *application.BasicChatService) {
 	if len(command.Arguments) != 2 {
 		slog.Info("invalid number of arguments", "sessionID", command.SessionID, "commandType", command.CommandType, "commandArgs", command.Arguments)
 		chatService.SendMessageToSessionFromServer(command.SessionID, "Wrong number of arguments, usage: /passwd <old password> <new password>")
@@ -129,20 +129,20 @@ func handleChangePasswordCommand(command domain.Command, chatService *applicatio
 	chatService.SendMessageToSessionFromServer(command.SessionID, "Changed Password")
 }
 
-func handleInfoCommand(command domain.Command, chatService *application.ChatService) {
+func handleInfoCommand(command domain.Command, chatService *application.BasicChatService) {
 	userName := chatService.GetUserNameForSessionID(command.SessionID)
 	slog.Info("served info", "sessionID", command.SessionID)
 	chatService.SendMessageToSessionFromServer(command.SessionID, fmt.Sprintf("sessionID: %s\n[plugin] userName:  %s", command.SessionID, userName))
 }
 
-func handleWhoCommand(command domain.Command, chatService *application.ChatService) {
+func handleWhoCommand(command domain.Command, chatService *application.BasicChatService) {
 	for _, userName := range chatService.GetAllLoggedInUserNames() {
 		chatService.SendMessageToSessionFromServer(command.SessionID, userName)
 	}
 	slog.Info("served who", "sessionID", command.SessionID)
 }
 
-func handleQuitCommand(command domain.Command, chatService *application.ChatService) {
+func handleQuitCommand(command domain.Command, chatService *application.BasicChatService) {
 	chatService.QuitSession(command.SessionID)
 	slog.Info("quit session", "sessionID", command.SessionID)
 }

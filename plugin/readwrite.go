@@ -12,7 +12,7 @@ import (
 	"io"
 	"log/slog"
 
-	"tcpchat-server-go/application"
+	"github.com/benedictweis/tcpchat-server-go/application"
 )
 
 // handleRead is used to read from a reader and return the result on a channel.

@@ -12,9 +12,9 @@ import (
 	"net"
 	"sync"
 
-	"tcpchat-server-go/application"
-	"tcpchat-server-go/application/handlers"
-	"tcpchat-server-go/domain"
+	"github.com/benedictweis/tcpchat-server-go/application"
+	"github.com/benedictweis/tcpchat-server-go/application/handlers"
+	"github.com/benedictweis/tcpchat-server-go/domain"
 )
 
 type TCPChatServer struct {

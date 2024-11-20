@@ -1,6 +1,6 @@
 # Main verify target that runs all checks
 .PHONY: verify
-verify: clean build license-check format-check test lint-clean lint-check coverage
+verify: clean build license-check format-check mockgen test lint-clean lint-check coverage
 
 # Clean target to remove build artifacts
 .PHONY: clean
@@ -46,11 +46,20 @@ format:
 	@echo "Formatting files..."
 	gofmt -l -w .
 
+# mockgen target to generate mocks
+.PHONY: mockgen
+mockgen:
+	@echo "Generating mocks..."
+	rm -rf test/mock
+	mkdir -p test/mock
+	go generate ./...
+
 # Test target to run unit tests
 .PHONY: test
 test:
 	@echo "Running tests..."
 	go test ./... -v
+
 # Lint-clean cleans the linting cache
 .PHONY: lint-clean
 lint-clean: installed-linter
@@ -75,7 +84,12 @@ coverage:
 	@echo "Fixing linting issues..."
 	sh ./hack/coverage.sh 70
 
-# Installed-linter check that the linter is installed
+# Installed-mockgen checks that the mockgen package is installed
+.PHONY: installed-mockgen
+installed-mockgen:
+	@sh ./hack/installed.sh "mockgen"
+
+# Installed-linter checks that the linter is installed
 .PHONY: installed-linter
 installed-linter:
 	@sh ./hack/installed.sh "golangci-lint"

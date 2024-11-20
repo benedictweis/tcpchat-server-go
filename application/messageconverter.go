@@ -12,7 +12,7 @@ import (
 	"log/slog"
 	"strings"
 
-	"tcpchat-server-go/domain"
+	"github.com/benedictweis/tcpchat-server-go/domain"
 )
 
 // MessageResult is used to couple a possible error when sending a Message.

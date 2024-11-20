@@ -55,37 +55,39 @@
 			<div id="nav">
 				<select id="files">
 				
-				<option value="file0">tcpchat-server-go/application/chatservice.go (0.0%)</option>
+				<option value="file0">github.com/benedictweis/tcpchat-server-go/application/chatservice.go (0.0%)</option>
 				
-				<option value="file1">tcpchat-server-go/application/errors.go (0.0%)</option>
+				<option value="file1">github.com/benedictweis/tcpchat-server-go/application/errors.go (40.0%)</option>
 				
-				<option value="file2">tcpchat-server-go/application/handlers/commandhandler.go (0.0%)</option>
+				<option value="file2">github.com/benedictweis/tcpchat-server-go/application/handlers/commandhandler.go (0.0%)</option>
 				
-				<option value="file3">tcpchat-server-go/application/handlers/errorhandler.go (66.7%)</option>
+				<option value="file3">github.com/benedictweis/tcpchat-server-go/application/handlers/errorhandler.go (100.0%)</option>
 				
-				<option value="file4">tcpchat-server-go/application/handlers/messagebroker.go (0.0%)</option>
+				<option value="file4">github.com/benedictweis/tcpchat-server-go/application/handlers/messagebroker.go (0.0%)</option>
 				
-				<option value="file5">tcpchat-server-go/application/handlers/newsessionhandler.go (0.0%)</option>
+				<option value="file5">github.com/benedictweis/tcpchat-server-go/application/handlers/newsessionhandler.go (0.0%)</option>
 				
-				<option value="file6">tcpchat-server-go/application/handlers/textmessagehandler.go (0.0%)</option>
+				<option value="file6">github.com/benedictweis/tcpchat-server-go/application/handlers/textmessagehandler.go (0.0%)</option>
 				
-				<option value="file7">tcpchat-server-go/application/messageconverter.go (0.0%)</option>
+				<option value="file7">github.com/benedictweis/tcpchat-server-go/application/messageconverter.go (0.0%)</option>
 				
-				<option value="file8">tcpchat-server-go/domain/command.go (0.0%)</option>
+				<option value="file8">github.com/benedictweis/tcpchat-server-go/domain/command.go (0.0%)</option>
 				
-				<option value="file9">tcpchat-server-go/domain/session.go (0.0%)</option>
+				<option value="file9">github.com/benedictweis/tcpchat-server-go/domain/session.go (0.0%)</option>
 				
-				<option value="file10">tcpchat-server-go/domain/user.go (0.0%)</option>
+				<option value="file10">github.com/benedictweis/tcpchat-server-go/domain/user.go (0.0%)</option>
 				
-				<option value="file11">tcpchat-server-go/domain/usersession.go (0.0%)</option>
+				<option value="file11">github.com/benedictweis/tcpchat-server-go/domain/usersession.go (0.0%)</option>
 				
-				<option value="file12">tcpchat-server-go/main.go (0.0%)</option>
+				<option value="file12">github.com/benedictweis/tcpchat-server-go/main.go (0.0%)</option>
 				
-				<option value="file13">tcpchat-server-go/plugin/connection.go (0.0%)</option>
+				<option value="file13">github.com/benedictweis/tcpchat-server-go/plugin/connection.go (0.0%)</option>
 				
-				<option value="file14">tcpchat-server-go/plugin/readwrite.go (0.0%)</option>
+				<option value="file14">github.com/benedictweis/tcpchat-server-go/plugin/readwrite.go (0.0%)</option>
 				
-				<option value="file15">tcpchat-server-go/plugin/server.go (0.0%)</option>
+				<option value="file15">github.com/benedictweis/tcpchat-server-go/plugin/server.go (0.0%)</option>
+				
+				<option value="file16">github.com/benedictweis/tcpchat-server-go/test/mock/chatservice_mock.go (12.5%)</option>
 				
 				</select>
 			</div>
@@ -109,24 +111,39 @@ package application
 import (
         "fmt"
 
-        "tcpchat-server-go/domain"
+        "github.com/benedictweis/tcpchat-server-go/domain"
 )
 
-type ChatService struct {
+//go:generate mockgen -destination=../test/mock/chatservice_mock.go . ChatService
+type ChatService interface {
+        SendMessageToSessionFromServer(sessionID string, message string)
+        RegisterNewSession(newSession domain.Session)
+        SendTextMessageToEveryone(sessionID, message string) error
+        ChangeUserName(sessionID string, newUserName string) error
+        SendPrivateMessage(sessionID, messagePartnerUserName, message string) error
+        CreateAccount(sessionID, userName, password string) error
+        Login(sessionID, userName, password string) error
+        ChangePassword(sessionID, oldPassword, newPassword string) error
+        GetUserNameForSessionID(sessionID string) string
+        GetAllLoggedInUserNames() []string
+        QuitSession(sessionID string)
+}
+
+type BasicChatService struct {
         sessionRepository     domain.SessionRepository
         userRepository        domain.UserRepository
         userSessionRepository domain.UserSessionRepository
 }
 
-func NewChatService(sessionRepository domain.SessionRepository, userRepository domain.UserRepository, userSessionRepository domain.UserSessionRepository) *ChatService <span class="cov0" title="0">{
-        return &amp;ChatService{sessionRepository: sessionRepository, userRepository: userRepository, userSessionRepository: userSessionRepository}
+func NewChatService(sessionRepository domain.SessionRepository, userRepository domain.UserRepository, userSessionRepository domain.UserSessionRepository) *BasicChatService <span class="cov0" title="0">{
+        return &amp;BasicChatService{sessionRepository: sessionRepository, userRepository: userRepository, userSessionRepository: userSessionRepository}
 }</span>
 
-func (c ChatService) SendMessageToSessionFromServer(sessionID string, message string) <span class="cov0" title="0">{
+func (c BasicChatService) SendMessageToSessionFromServer(sessionID string, message string) <span class="cov0" title="0">{
         c.sendMessageToSession(sessionID, fmt.Sprintf("[plugin] %s", message))
 }</span>
 
-func (c ChatService) sendMessageToSession(sessionID string, message string) <span class="cov0" title="0">{
+func (c BasicChatService) sendMessageToSession(sessionID string, message string) <span class="cov0" title="0">{
         session, sessionExists := c.sessionRepository.FindByID(sessionID)
         if !sessionExists </span><span class="cov0" title="0">{
                 return
@@ -134,11 +151,11 @@ func (c ChatService) sendMessageToSession(sessionID string, message string) <spa
         <span class="cov0" title="0">session.MessagesToSession &lt;- fmt.Sprintf("%s\n", message)</span>
 }
 
-func (c ChatService) RegisterNewSession(newSession domain.Session) <span class="cov0" title="0">{
+func (c BasicChatService) RegisterNewSession(newSession domain.Session) <span class="cov0" title="0">{
         c.sessionRepository.Add(newSession)
 }</span>
 
-func (c ChatService) SendTextMessageToEveryone(sessionID, message string) error <span class="cov0" title="0">{
+func (c BasicChatService) SendTextMessageToEveryone(sessionID, message string) error <span class="cov0" title="0">{
         _, sessionExists := c.sessionRepository.FindByID(sessionID)
         if !sessionExists </span><span class="cov0" title="0">{
                 return fmt.Errorf("revieced a text Message from an unknown session id: %s", sessionID)
@@ -159,7 +176,7 @@ func (c ChatService) SendTextMessageToEveryone(sessionID, message string) error 
         <span class="cov0" title="0">return nil</span>
 }
 
-func (c ChatService) ChangeUserName(sessionID string, newUserName string) error <span class="cov0" title="0">{
+func (c BasicChatService) ChangeUserName(sessionID string, newUserName string) error <span class="cov0" title="0">{
         userSession, userSessionExists := c.userSessionRepository.FindBySessionID(sessionID)
         if !userSessionExists </span><span class="cov0" title="0">{
                 return NewErrSessionNotLoggedIn(sessionID)
@@ -172,7 +189,7 @@ func (c ChatService) ChangeUserName(sessionID string, newUserName string) error 
         return nil</span>
 }
 
-func (c ChatService) SendPrivateMessage(sessionID, messagePartnerUserName, message string) error <span class="cov0" title="0">{
+func (c BasicChatService) SendPrivateMessage(sessionID, messagePartnerUserName, message string) error <span class="cov0" title="0">{
         userSession, userSessionExists := c.userSessionRepository.FindBySessionID(sessionID)
         if !userSessionExists </span><span class="cov0" title="0">{
                 return NewErrSessionNotLoggedIn(sessionID)
@@ -195,7 +212,7 @@ func (c ChatService) SendPrivateMessage(sessionID, messagePartnerUserName, messa
         <span class="cov0" title="0">return nil</span>
 }
 
-func (c ChatService) CreateAccount(sessionID, userName, password string) error <span class="cov0" title="0">{
+func (c BasicChatService) CreateAccount(sessionID, userName, password string) error <span class="cov0" title="0">{
         user, err := domain.NewUser(userName, password)
         if err != nil </span><span class="cov0" title="0">{
                 return NewErrCouldNotCreateUser(sessionID)
@@ -207,7 +224,7 @@ func (c ChatService) CreateAccount(sessionID, userName, password string) error <
         <span class="cov0" title="0">return nil</span>
 }
 
-func (c ChatService) Login(sessionID, userName, password string) error <span class="cov0" title="0">{
+func (c BasicChatService) Login(sessionID, userName, password string) error <span class="cov0" title="0">{
         user, userExists := c.userRepository.FindByName(userName)
         if !userExists </span><span class="cov0" title="0">{
                 return NewErrUserDoesNotExist(sessionID, userName)
@@ -221,7 +238,7 @@ func (c ChatService) Login(sessionID, userName, password string) error <span cla
         return nil</span>
 }
 
-func (c ChatService) ChangePassword(sessionID, oldPassword, newPassword string) error <span class="cov0" title="0">{
+func (c BasicChatService) ChangePassword(sessionID, oldPassword, newPassword string) error <span class="cov0" title="0">{
         userSession, userSessionExists := c.userSessionRepository.FindBySessionID(sessionID)
         if !userSessionExists </span><span class="cov0" title="0">{
                 return NewErrSessionNotLoggedIn(sessionID)
@@ -240,7 +257,7 @@ func (c ChatService) ChangePassword(sessionID, oldPassword, newPassword string) 
         <span class="cov0" title="0">return nil</span>
 }
 
-func (c ChatService) GetUserNameForSessionID(sessionID string) string <span class="cov0" title="0">{
+func (c BasicChatService) GetUserNameForSessionID(sessionID string) string <span class="cov0" title="0">{
         userSession, userSessionExists := c.userSessionRepository.FindBySessionID(sessionID)
         if !userSessionExists </span><span class="cov0" title="0">{
                 return ""
@@ -252,7 +269,7 @@ func (c ChatService) GetUserNameForSessionID(sessionID string) string <span clas
         <span class="cov0" title="0">return user.Name</span>
 }
 
-func (c ChatService) GetAllLoggedInUserNames() []string <span class="cov0" title="0">{
+func (c BasicChatService) GetAllLoggedInUserNames() []string <span class="cov0" title="0">{
         userNames := make([]string, 0)
         for _, user := range c.userRepository.GetAll() </span><span class="cov0" title="0">{
                 userSessions := c.userSessionRepository.DeleteByUserID(user.ID)
@@ -263,7 +280,7 @@ func (c ChatService) GetAllLoggedInUserNames() []string <span class="cov0" title
         <span class="cov0" title="0">return userNames</span>
 }
 
-func (c ChatService) QuitSession(sessionID string) <span class="cov0" title="0">{
+func (c BasicChatService) QuitSession(sessionID string) <span class="cov0" title="0">{
         session, sessionExists := c.sessionRepository.FindByID(sessionID)
         if !sessionExists </span><span class="cov0" title="0">{
                 return
@@ -294,7 +311,7 @@ type BaseError struct {
         userMsg   string
 }
 
-func NewBaseError(sessionID, message, userMsg string) BaseError <span class="cov0" title="0">{
+func NewBaseError(sessionID, message, userMsg string) BaseError <span class="cov8" title="1">{
         return BaseError{
                 sessionID: sessionID,
                 message:   message,
@@ -302,11 +319,11 @@ func NewBaseError(sessionID, message, userMsg string) BaseError <span class="cov
         }
 }</span>
 
-func (e BaseError) Error() string <span class="cov0" title="0">{
+func (e BaseError) Error() string <span class="cov8" title="1">{
         return e.message
 }</span>
 
-func (e BaseError) UserFriendlyError() string <span class="cov0" title="0">{
+func (e BaseError) UserFriendlyError() string <span class="cov8" title="1">{
         return e.userMsg
 }</span>
 
@@ -314,7 +331,7 @@ type ErrSessionNotLoggedIn struct {
         BaseError
 }
 
-func NewErrSessionNotLoggedIn(sessionID string) *ErrSessionNotLoggedIn <span class="cov0" title="0">{
+func NewErrSessionNotLoggedIn(sessionID string) *ErrSessionNotLoggedIn <span class="cov8" title="1">{
         return &amp;ErrSessionNotLoggedIn{NewBaseError(
                 sessionID,
                 fmt.Sprintf("session %s not logged in", sessionID),
@@ -407,17 +424,17 @@ import (
         "log/slog"
         "strings"
 
-        "tcpchat-server-go/application"
-        "tcpchat-server-go/domain"
+        "github.com/benedictweis/tcpchat-server-go/application"
+        "github.com/benedictweis/tcpchat-server-go/domain"
 )
 
-func HandleCommand(command domain.Command, chatService *application.ChatService) <span class="cov0" title="0">{
+func HandleCommand(command domain.Command, chatService *application.BasicChatService) <span class="cov0" title="0">{
         slog.Info("received command", "sessionID", command.SessionID, "commandType", command.CommandType, "commandArgs", command.Arguments)
         matchCommandTypeToFunc(command.CommandType)(command, chatService)
 }</span>
 
-func matchCommandTypeToFunc(commandType domain.CommandType) func(command domain.Command, chatService *application.ChatService) <span class="cov0" title="0">{
-        handlers := []func(command domain.Command, chatService *application.ChatService){
+func matchCommandTypeToFunc(commandType domain.CommandType) func(command domain.Command, chatService *application.BasicChatService) <span class="cov0" title="0">{
+        handlers := []func(command domain.Command, chatService *application.BasicChatService){
                 handleUnknownCommand,        // 0
                 handleChangeNameCommand,     // 1
                 handlePrivateMessageCommand, // 2
@@ -437,12 +454,12 @@ func matchCommandTypeToFunc(commandType domain.CommandType) func(command domain.
         <span class="cov0" title="0">return handlers[commandType]</span>
 }
 
-func handleUnknownCommand(command domain.Command, chatService *application.ChatService) <span class="cov0" title="0">{
+func handleUnknownCommand(command domain.Command, chatService *application.BasicChatService) <span class="cov0" title="0">{
         slog.Info("received unknown command", "sessionID", command.SessionID, "commandType", command.CommandType, "commandArgs", command.Arguments)
         chatService.SendMessageToSessionFromServer(command.SessionID, "Unknown command")
 }</span>
 
-func handleChangeNameCommand(command domain.Command, chatService *application.ChatService) <span class="cov0" title="0">{
+func handleChangeNameCommand(command domain.Command, chatService *application.BasicChatService) <span class="cov0" title="0">{
         if len(command.Arguments) != 1 </span><span class="cov0" title="0">{
                 slog.Info("invalid number of arguments", "sessionID", command.SessionID, "commandType", command.CommandType, "commandArgs", command.Arguments)
                 chatService.SendMessageToSessionFromServer(command.SessionID, "Wrong number of arguments, usage: /name &lt;new username&gt;")
@@ -458,7 +475,7 @@ func handleChangeNameCommand(command domain.Command, chatService *application.Ch
         chatService.SendMessageToSessionFromServer(command.SessionID, fmt.Sprintf("Changed username to %s", newUserName))</span>
 }
 
-func handlePrivateMessageCommand(command domain.Command, chatService *application.ChatService) <span class="cov0" title="0">{
+func handlePrivateMessageCommand(command domain.Command, chatService *application.BasicChatService) <span class="cov0" title="0">{
         if len(command.Arguments) &lt; 2 </span><span class="cov0" title="0">{
                 slog.Info("invalid number of arguments", "sessionID", command.SessionID, "commandType", command.CommandType, "commandArgs", command.Arguments)
                 chatService.SendMessageToSessionFromServer(command.SessionID, "Wrong number of arguments, usage: /msg &lt;username&gt; &lt;message...&gt;")
@@ -474,7 +491,7 @@ func handlePrivateMessageCommand(command domain.Command, chatService *applicatio
         <span class="cov0" title="0">slog.Info("sent private message", "sessionID", command.SessionID, "messagePartnerUserName", messagePartnerUserName)</span>
 }
 
-func handleCreateAccountCommand(command domain.Command, chatService *application.ChatService) <span class="cov0" title="0">{
+func handleCreateAccountCommand(command domain.Command, chatService *application.BasicChatService) <span class="cov0" title="0">{
         if len(command.Arguments) != 2 </span><span class="cov0" title="0">{
                 slog.Info("invalid number of arguments", "sessionID", command.SessionID, "commandType", command.CommandType, "commandArgs", command.Arguments)
                 chatService.SendMessageToSessionFromServer(command.SessionID, "Wrong number of arguments, usage: /acc &lt;username&gt; &lt;password&gt;")
@@ -491,7 +508,7 @@ func handleCreateAccountCommand(command domain.Command, chatService *application
         chatService.SendMessageToSessionFromServer(command.SessionID, "Created new account, please login now")</span>
 }
 
-func handleLoginCommand(command domain.Command, chatService *application.ChatService) <span class="cov0" title="0">{
+func handleLoginCommand(command domain.Command, chatService *application.BasicChatService) <span class="cov0" title="0">{
         if len(command.Arguments) != 2 </span><span class="cov0" title="0">{
                 slog.Info("invalid number of arguments", "sessionID", command.SessionID, "commandType", command.CommandType, "commandArgs", command.Arguments)
                 chatService.SendMessageToSessionFromServer(command.SessionID, "Wrong number of arguments, usage: /login &lt;username&gt; &lt;password&gt;")
@@ -509,7 +526,7 @@ func handleLoginCommand(command domain.Command, chatService *application.ChatSer
         chatService.SendMessageToSessionFromServer(command.SessionID, "Logged in")</span>
 }
 
-func handleChangePasswordCommand(command domain.Command, chatService *application.ChatService) <span class="cov0" title="0">{
+func handleChangePasswordCommand(command domain.Command, chatService *application.BasicChatService) <span class="cov0" title="0">{
         if len(command.Arguments) != 2 </span><span class="cov0" title="0">{
                 slog.Info("invalid number of arguments", "sessionID", command.SessionID, "commandType", command.CommandType, "commandArgs", command.Arguments)
                 chatService.SendMessageToSessionFromServer(command.SessionID, "Wrong number of arguments, usage: /passwd &lt;old password&gt; &lt;new password&gt;")
@@ -526,20 +543,20 @@ func handleChangePasswordCommand(command domain.Command, chatService *applicatio
         chatService.SendMessageToSessionFromServer(command.SessionID, "Changed Password")</span>
 }
 
-func handleInfoCommand(command domain.Command, chatService *application.ChatService) <span class="cov0" title="0">{
+func handleInfoCommand(command domain.Command, chatService *application.BasicChatService) <span class="cov0" title="0">{
         userName := chatService.GetUserNameForSessionID(command.SessionID)
         slog.Info("served info", "sessionID", command.SessionID)
         chatService.SendMessageToSessionFromServer(command.SessionID, fmt.Sprintf("sessionID: %s\n[plugin] userName:  %s", command.SessionID, userName))
 }</span>
 
-func handleWhoCommand(command domain.Command, chatService *application.ChatService) <span class="cov0" title="0">{
+func handleWhoCommand(command domain.Command, chatService *application.BasicChatService) <span class="cov0" title="0">{
         for _, userName := range chatService.GetAllLoggedInUserNames() </span><span class="cov0" title="0">{
                 chatService.SendMessageToSessionFromServer(command.SessionID, userName)
         }</span>
         <span class="cov0" title="0">slog.Info("served who", "sessionID", command.SessionID)</span>
 }
 
-func handleQuitCommand(command domain.Command, chatService *application.ChatService) <span class="cov0" title="0">{
+func handleQuitCommand(command domain.Command, chatService *application.BasicChatService) <span class="cov0" title="0">{
         chatService.QuitSession(command.SessionID)
         slog.Info("quit session", "sessionID", command.SessionID)
 }</span>
@@ -556,12 +573,12 @@ import (
         "errors"
         "log/slog"
 
-        "tcpchat-server-go/application"
+        "github.com/benedictweis/tcpchat-server-go/application"
 )
 
-func handleErrors(err error, chatService *application.ChatService, sessionID string) <span class="cov8" title="1">{
+func handleErrors(err error, chatService application.ChatService, sessionID string) <span class="cov8" title="1">{
         var userFriendlyError application.UserFriendlyError
-        if errors.As(err, &amp;userFriendlyError) </span><span class="cov0" title="0">{
+        if errors.As(err, &amp;userFriendlyError) </span><span class="cov8" title="1">{
                 slog.Info("recovered from error", "err", err)
                 chatService.SendMessageToSessionFromServer(sessionID, userFriendlyError.UserFriendlyError())
         }</span> else<span class="cov8" title="1"> {
@@ -581,8 +598,8 @@ package handlers
 import (
         "context"
 
-        "tcpchat-server-go/application"
-        "tcpchat-server-go/domain"
+        "github.com/benedictweis/tcpchat-server-go/application"
+        "github.com/benedictweis/tcpchat-server-go/domain"
 )
 
 // HandleMessages handles all incoming messages.
@@ -616,11 +633,11 @@ package handlers
 import (
         "log/slog"
 
-        "tcpchat-server-go/application"
-        "tcpchat-server-go/domain"
+        "github.com/benedictweis/tcpchat-server-go/application"
+        "github.com/benedictweis/tcpchat-server-go/domain"
 )
 
-func HandleNewSession(newSession domain.Session, chatService *application.ChatService) <span class="cov0" title="0">{
+func HandleNewSession(newSession domain.Session, chatService *application.BasicChatService) <span class="cov0" title="0">{
         slog.Info("received new session", "sessionID", newSession.ID)
         chatService.RegisterNewSession(newSession)
         slog.Info("registered new session", "sessionID", newSession.ID)
@@ -638,11 +655,11 @@ package handlers
 import (
         "log/slog"
 
-        "tcpchat-server-go/application"
-        "tcpchat-server-go/domain"
+        "github.com/benedictweis/tcpchat-server-go/application"
+        "github.com/benedictweis/tcpchat-server-go/domain"
 )
 
-func HandleTextMessage(textMessage domain.TextMessage, chatService *application.ChatService) <span class="cov0" title="0">{
+func HandleTextMessage(textMessage domain.TextMessage, chatService *application.BasicChatService) <span class="cov0" title="0">{
         slog.Info("received text message", "sessionID", textMessage.SessionID, "textMessage", textMessage.Message)
         err := chatService.SendTextMessageToEveryone(textMessage.SessionID, textMessage.Message)
         if err != nil </span><span class="cov0" title="0">{
@@ -667,7 +684,7 @@ import (
         "log/slog"
         "strings"
 
-        "tcpchat-server-go/domain"
+        "github.com/benedictweis/tcpchat-server-go/domain"
 )
 
 // MessageResult is used to couple a possible error when sending a Message.
@@ -1012,7 +1029,7 @@ import (
         "log/slog"
         "os"
 
-        "tcpchat-server-go/plugin"
+        "github.com/benedictweis/tcpchat-server-go/plugin"
 )
 
 func main() <span class="cov0" title="0">{
@@ -1050,8 +1067,8 @@ import (
         "net"
         "sync"
 
-        "tcpchat-server-go/application"
-        "tcpchat-server-go/domain"
+        "github.com/benedictweis/tcpchat-server-go/application"
+        "github.com/benedictweis/tcpchat-server-go/domain"
 )
 
 // ConnectionResult is used to couple a possible error when accepting a connection with its result.
@@ -1138,7 +1155,7 @@ import (
         "io"
         "log/slog"
 
-        "tcpchat-server-go/application"
+        "github.com/benedictweis/tcpchat-server-go/application"
 )
 
 // handleRead is used to read from a reader and return the result on a channel.
@@ -1184,9 +1201,9 @@ import (
         "net"
         "sync"
 
-        "tcpchat-server-go/application"
-        "tcpchat-server-go/application/handlers"
-        "tcpchat-server-go/domain"
+        "github.com/benedictweis/tcpchat-server-go/application"
+        "github.com/benedictweis/tcpchat-server-go/application/handlers"
+        "github.com/benedictweis/tcpchat-server-go/domain"
 )
 
 type TCPChatServer struct {
@@ -1228,6 +1245,197 @@ func (t *TCPChatServer) createNecessaryGoroutines(ctx context.Context, listener 
         go application.ConvertMessages(ctx, messagesRead, textMessages, commands)
         go handlers.HandleMessages(ctx, sessions, textMessages, commands)
         go handleConnections(ctx, listener, activeConnections, messagesRead, sessions)
+}</span>
+</pre>
+		
+		<pre class="file" id="file16" style="display: none">// Code generated by MockGen. DO NOT EDIT.
+// Source: github.com/benedictweis/tcpchat-server-go/application (interfaces: ChatService)
+//
+// Generated by this command:
+//
+//        mockgen -destination=../test/mock/chatservice_mock.go . ChatService
+//
+
+// Package mock_application is a generated GoMock package.
+package mock_application
+
+import (
+        reflect "reflect"
+
+        domain "github.com/benedictweis/tcpchat-server-go/domain"
+        gomock "go.uber.org/mock/gomock"
+)
+
+// MockChatService is a mock of ChatService interface.
+type MockChatService struct {
+        ctrl     *gomock.Controller
+        recorder *MockChatServiceMockRecorder
+        isgomock struct{}
+}
+
+// MockChatServiceMockRecorder is the mock recorder for MockChatService.
+type MockChatServiceMockRecorder struct {
+        mock *MockChatService
+}
+
+// NewMockChatService creates a new mock instance.
+func NewMockChatService(ctrl *gomock.Controller) *MockChatService <span class="cov8" title="1">{
+        mock := &amp;MockChatService{ctrl: ctrl}
+        mock.recorder = &amp;MockChatServiceMockRecorder{mock}
+        return mock
+}</span>
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockChatService) EXPECT() *MockChatServiceMockRecorder <span class="cov8" title="1">{
+        return m.recorder
+}</span>
+
+// ChangePassword mocks base method.
+func (m *MockChatService) ChangePassword(sessionID, oldPassword, newPassword string) error <span class="cov0" title="0">{
+        m.ctrl.T.Helper()
+        ret := m.ctrl.Call(m, "ChangePassword", sessionID, oldPassword, newPassword)
+        ret0, _ := ret[0].(error)
+        return ret0
+}</span>
+
+// ChangePassword indicates an expected call of ChangePassword.
+func (mr *MockChatServiceMockRecorder) ChangePassword(sessionID, oldPassword, newPassword any) *gomock.Call <span class="cov0" title="0">{
+        mr.mock.ctrl.T.Helper()
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangePassword", reflect.TypeOf((*MockChatService)(nil).ChangePassword), sessionID, oldPassword, newPassword)
+}</span>
+
+// ChangeUserName mocks base method.
+func (m *MockChatService) ChangeUserName(sessionID, newUserName string) error <span class="cov0" title="0">{
+        m.ctrl.T.Helper()
+        ret := m.ctrl.Call(m, "ChangeUserName", sessionID, newUserName)
+        ret0, _ := ret[0].(error)
+        return ret0
+}</span>
+
+// ChangeUserName indicates an expected call of ChangeUserName.
+func (mr *MockChatServiceMockRecorder) ChangeUserName(sessionID, newUserName any) *gomock.Call <span class="cov0" title="0">{
+        mr.mock.ctrl.T.Helper()
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangeUserName", reflect.TypeOf((*MockChatService)(nil).ChangeUserName), sessionID, newUserName)
+}</span>
+
+// CreateAccount mocks base method.
+func (m *MockChatService) CreateAccount(sessionID, userName, password string) error <span class="cov0" title="0">{
+        m.ctrl.T.Helper()
+        ret := m.ctrl.Call(m, "CreateAccount", sessionID, userName, password)
+        ret0, _ := ret[0].(error)
+        return ret0
+}</span>
+
+// CreateAccount indicates an expected call of CreateAccount.
+func (mr *MockChatServiceMockRecorder) CreateAccount(sessionID, userName, password any) *gomock.Call <span class="cov0" title="0">{
+        mr.mock.ctrl.T.Helper()
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAccount", reflect.TypeOf((*MockChatService)(nil).CreateAccount), sessionID, userName, password)
+}</span>
+
+// GetAllLoggedInUserNames mocks base method.
+func (m *MockChatService) GetAllLoggedInUserNames() []string <span class="cov0" title="0">{
+        m.ctrl.T.Helper()
+        ret := m.ctrl.Call(m, "GetAllLoggedInUserNames")
+        ret0, _ := ret[0].([]string)
+        return ret0
+}</span>
+
+// GetAllLoggedInUserNames indicates an expected call of GetAllLoggedInUserNames.
+func (mr *MockChatServiceMockRecorder) GetAllLoggedInUserNames() *gomock.Call <span class="cov0" title="0">{
+        mr.mock.ctrl.T.Helper()
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllLoggedInUserNames", reflect.TypeOf((*MockChatService)(nil).GetAllLoggedInUserNames))
+}</span>
+
+// GetUserNameForSessionID mocks base method.
+func (m *MockChatService) GetUserNameForSessionID(sessionID string) string <span class="cov0" title="0">{
+        m.ctrl.T.Helper()
+        ret := m.ctrl.Call(m, "GetUserNameForSessionID", sessionID)
+        ret0, _ := ret[0].(string)
+        return ret0
+}</span>
+
+// GetUserNameForSessionID indicates an expected call of GetUserNameForSessionID.
+func (mr *MockChatServiceMockRecorder) GetUserNameForSessionID(sessionID any) *gomock.Call <span class="cov0" title="0">{
+        mr.mock.ctrl.T.Helper()
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserNameForSessionID", reflect.TypeOf((*MockChatService)(nil).GetUserNameForSessionID), sessionID)
+}</span>
+
+// Login mocks base method.
+func (m *MockChatService) Login(sessionID, userName, password string) error <span class="cov0" title="0">{
+        m.ctrl.T.Helper()
+        ret := m.ctrl.Call(m, "Login", sessionID, userName, password)
+        ret0, _ := ret[0].(error)
+        return ret0
+}</span>
+
+// Login indicates an expected call of Login.
+func (mr *MockChatServiceMockRecorder) Login(sessionID, userName, password any) *gomock.Call <span class="cov0" title="0">{
+        mr.mock.ctrl.T.Helper()
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Login", reflect.TypeOf((*MockChatService)(nil).Login), sessionID, userName, password)
+}</span>
+
+// QuitSession mocks base method.
+func (m *MockChatService) QuitSession(sessionID string) <span class="cov0" title="0">{
+        m.ctrl.T.Helper()
+        m.ctrl.Call(m, "QuitSession", sessionID)
+}</span>
+
+// QuitSession indicates an expected call of QuitSession.
+func (mr *MockChatServiceMockRecorder) QuitSession(sessionID any) *gomock.Call <span class="cov0" title="0">{
+        mr.mock.ctrl.T.Helper()
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QuitSession", reflect.TypeOf((*MockChatService)(nil).QuitSession), sessionID)
+}</span>
+
+// RegisterNewSession mocks base method.
+func (m *MockChatService) RegisterNewSession(newSession domain.Session) <span class="cov0" title="0">{
+        m.ctrl.T.Helper()
+        m.ctrl.Call(m, "RegisterNewSession", newSession)
+}</span>
+
+// RegisterNewSession indicates an expected call of RegisterNewSession.
+func (mr *MockChatServiceMockRecorder) RegisterNewSession(newSession any) *gomock.Call <span class="cov0" title="0">{
+        mr.mock.ctrl.T.Helper()
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterNewSession", reflect.TypeOf((*MockChatService)(nil).RegisterNewSession), newSession)
+}</span>
+
+// SendMessageToSessionFromServer mocks base method.
+func (m *MockChatService) SendMessageToSessionFromServer(sessionID, message string) <span class="cov8" title="1">{
+        m.ctrl.T.Helper()
+        m.ctrl.Call(m, "SendMessageToSessionFromServer", sessionID, message)
+}</span>
+
+// SendMessageToSessionFromServer indicates an expected call of SendMessageToSessionFromServer.
+func (mr *MockChatServiceMockRecorder) SendMessageToSessionFromServer(sessionID, message any) *gomock.Call <span class="cov8" title="1">{
+        mr.mock.ctrl.T.Helper()
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendMessageToSessionFromServer", reflect.TypeOf((*MockChatService)(nil).SendMessageToSessionFromServer), sessionID, message)
+}</span>
+
+// SendPrivateMessage mocks base method.
+func (m *MockChatService) SendPrivateMessage(sessionID, messagePartnerUserName, message string) error <span class="cov0" title="0">{
+        m.ctrl.T.Helper()
+        ret := m.ctrl.Call(m, "SendPrivateMessage", sessionID, messagePartnerUserName, message)
+        ret0, _ := ret[0].(error)
+        return ret0
+}</span>
+
+// SendPrivateMessage indicates an expected call of SendPrivateMessage.
+func (mr *MockChatServiceMockRecorder) SendPrivateMessage(sessionID, messagePartnerUserName, message any) *gomock.Call <span class="cov0" title="0">{
+        mr.mock.ctrl.T.Helper()
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendPrivateMessage", reflect.TypeOf((*MockChatService)(nil).SendPrivateMessage), sessionID, messagePartnerUserName, message)
+}</span>
+
+// SendTextMessageToEveryone mocks base method.
+func (m *MockChatService) SendTextMessageToEveryone(sessionID, message string) error <span class="cov0" title="0">{
+        m.ctrl.T.Helper()
+        ret := m.ctrl.Call(m, "SendTextMessageToEveryone", sessionID, message)
+        ret0, _ := ret[0].(error)
+        return ret0
+}</span>
+
+// SendTextMessageToEveryone indicates an expected call of SendTextMessageToEveryone.
+func (mr *MockChatServiceMockRecorder) SendTextMessageToEveryone(sessionID, message any) *gomock.Call <span class="cov0" title="0">{
+        mr.mock.ctrl.T.Helper()
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendTextMessageToEveryone", reflect.TypeOf((*MockChatService)(nil).SendTextMessageToEveryone), sessionID, message)
 }</span>
 </pre>
 		

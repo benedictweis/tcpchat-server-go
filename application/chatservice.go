@@ -8,24 +8,39 @@ package application
 import (
 	"fmt"
 
-	"tcpchat-server-go/domain"
+	"github.com/benedictweis/tcpchat-server-go/domain"
 )
 
-type ChatService struct {
+//go:generate mockgen -destination=../test/mock/chatservice_mock.go . ChatService
+type ChatService interface {
+	SendMessageToSessionFromServer(sessionID string, message string)
+	RegisterNewSession(newSession domain.Session)
+	SendTextMessageToEveryone(sessionID, message string) error
+	ChangeUserName(sessionID string, newUserName string) error
+	SendPrivateMessage(sessionID, messagePartnerUserName, message string) error
+	CreateAccount(sessionID, userName, password string) error
+	Login(sessionID, userName, password string) error
+	ChangePassword(sessionID, oldPassword, newPassword string) error
+	GetUserNameForSessionID(sessionID string) string
+	GetAllLoggedInUserNames() []string
+	QuitSession(sessionID string)
+}
+
+type BasicChatService struct {
 	sessionRepository     domain.SessionRepository
 	userRepository        domain.UserRepository
 	userSessionRepository domain.UserSessionRepository
 }
 
-func NewChatService(sessionRepository domain.SessionRepository, userRepository domain.UserRepository, userSessionRepository domain.UserSessionRepository) *ChatService {
-	return &ChatService{sessionRepository: sessionRepository, userRepository: userRepository, userSessionRepository: userSessionRepository}
+func NewChatService(sessionRepository domain.SessionRepository, userRepository domain.UserRepository, userSessionRepository domain.UserSessionRepository) *BasicChatService {
+	return &BasicChatService{sessionRepository: sessionRepository, userRepository: userRepository, userSessionRepository: userSessionRepository}
 }
 
-func (c ChatService) SendMessageToSessionFromServer(sessionID string, message string) {
+func (c BasicChatService) SendMessageToSessionFromServer(sessionID string, message string) {
 	c.sendMessageToSession(sessionID, fmt.Sprintf("[plugin] %s", message))
 }
 
-func (c ChatService) sendMessageToSession(sessionID string, message string) {
+func (c BasicChatService) sendMessageToSession(sessionID string, message string) {
 	session, sessionExists := c.sessionRepository.FindByID(sessionID)
 	if !sessionExists {
 		return
@@ -33,11 +48,11 @@ func (c ChatService) sendMessageToSession(sessionID string, message string) {
 	session.MessagesToSession <- fmt.Sprintf("%s\n", message)
 }
 
-func (c ChatService) RegisterNewSession(newSession domain.Session) {
+func (c BasicChatService) RegisterNewSession(newSession domain.Session) {
 	c.sessionRepository.Add(newSession)
 }
 
-func (c ChatService) SendTextMessageToEveryone(sessionID, message string) error {
+func (c BasicChatService) SendTextMessageToEveryone(sessionID, message string) error {
 	_, sessionExists := c.sessionRepository.FindByID(sessionID)
 	if !sessionExists {
 		return fmt.Errorf("revieced a text Message from an unknown session id: %s", sessionID)
@@ -58,7 +73,7 @@ func (c ChatService) SendTextMessageToEveryone(sessionID, message string) error 
 	return nil
 }
 
-func (c ChatService) ChangeUserName(sessionID string, newUserName string) error {
+func (c BasicChatService) ChangeUserName(sessionID string, newUserName string) error {
 	userSession, userSessionExists := c.userSessionRepository.FindBySessionID(sessionID)
 	if !userSessionExists {
 		return NewErrSessionNotLoggedIn(sessionID)
@@ -71,7 +86,7 @@ func (c ChatService) ChangeUserName(sessionID string, newUserName string) error 
 	return nil
 }
 
-func (c ChatService) SendPrivateMessage(sessionID, messagePartnerUserName, message string) error {
+func (c BasicChatService) SendPrivateMessage(sessionID, messagePartnerUserName, message string) error {
 	userSession, userSessionExists := c.userSessionRepository.FindBySessionID(sessionID)
 	if !userSessionExists {
 		return NewErrSessionNotLoggedIn(sessionID)
@@ -94,7 +109,7 @@ func (c ChatService) SendPrivateMessage(sessionID, messagePartnerUserName, messa
 	return nil
 }
 
-func (c ChatService) CreateAccount(sessionID, userName, password string) error {
+func (c BasicChatService) CreateAccount(sessionID, userName, password string) error {
 	user, err := domain.NewUser(userName, password)
 	if err != nil {
 		return NewErrCouldNotCreateUser(sessionID)
@@ -106,7 +121,7 @@ func (c ChatService) CreateAccount(sessionID, userName, password string) error {
 	return nil
 }
 
-func (c ChatService) Login(sessionID, userName, password string) error {
+func (c BasicChatService) Login(sessionID, userName, password string) error {
 	user, userExists := c.userRepository.FindByName(userName)
 	if !userExists {
 		return NewErrUserDoesNotExist(sessionID, userName)
@@ -120,7 +135,7 @@ func (c ChatService) Login(sessionID, userName, password string) error {
 	return nil
 }
 
-func (c ChatService) ChangePassword(sessionID, oldPassword, newPassword string) error {
+func (c BasicChatService) ChangePassword(sessionID, oldPassword, newPassword string) error {
 	userSession, userSessionExists := c.userSessionRepository.FindBySessionID(sessionID)
 	if !userSessionExists {
 		return NewErrSessionNotLoggedIn(sessionID)
@@ -139,7 +154,7 @@ func (c ChatService) ChangePassword(sessionID, oldPassword, newPassword string) 
 	return nil
 }
 
-func (c ChatService) GetUserNameForSessionID(sessionID string) string {
+func (c BasicChatService) GetUserNameForSessionID(sessionID string) string {
 	userSession, userSessionExists := c.userSessionRepository.FindBySessionID(sessionID)
 	if !userSessionExists {
 		return ""
@@ -151,7 +166,7 @@ func (c ChatService) GetUserNameForSessionID(sessionID string) string {
 	return user.Name
 }
 
-func (c ChatService) GetAllLoggedInUserNames() []string {
+func (c BasicChatService) GetAllLoggedInUserNames() []string {
 	userNames := make([]string, 0)
 	for _, user := range c.userRepository.GetAll() {
 		userSessions := c.userSessionRepository.DeleteByUserID(user.ID)
@@ -162,7 +177,7 @@ func (c ChatService) GetAllLoggedInUserNames() []string {
 	return userNames
 }
 
-func (c ChatService) QuitSession(sessionID string) {
+func (c BasicChatService) QuitSession(sessionID string) {
 	session, sessionExists := c.sessionRepository.FindByID(sessionID)
 	if !sessionExists {
 		return
