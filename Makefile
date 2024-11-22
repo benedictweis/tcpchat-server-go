@@ -81,7 +81,7 @@ lint-fix: installed-linter
 # Coverage target to check global project code coverage
 .PHONY: coverage
 coverage:
-	@echo "Fixing linting issues..."
+	@echo "Generating coverage reports..."
 	sh ./hack/coverage.sh 70
 
 # Installed-mockgen checks that the mockgen package is installed

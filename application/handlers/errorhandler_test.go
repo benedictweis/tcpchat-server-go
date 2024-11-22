@@ -17,7 +17,7 @@ import (
 // TODO add test for error handler
 
 var _ = Describe("Error Handler", func() {
-	Describe("#handleErrors", func() {
+	Context("#handleErrors", func() {
 		var (
 			ctrl                 *gomock.Controller
 			sessionID            string

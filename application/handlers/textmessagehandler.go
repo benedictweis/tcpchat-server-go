@@ -12,7 +12,7 @@ import (
 	"github.com/benedictweis/tcpchat-server-go/domain"
 )
 
-func HandleTextMessage(textMessage domain.TextMessage, chatService *application.BasicChatService) {
+func HandleTextMessage(textMessage domain.TextMessage, chatService application.ChatService) {
 	slog.Info("received text message", "sessionID", textMessage.SessionID, "textMessage", textMessage.Message)
 	err := chatService.SendTextMessageToEveryone(textMessage.SessionID, textMessage.Message)
 	if err != nil {

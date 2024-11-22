@@ -5,6 +5,8 @@
 
 package domain
 
+import "strconv"
+
 type CommandType int
 
 const (
@@ -19,19 +21,23 @@ const (
 	Quit
 )
 
-// String implements the string variants of CommandType.
-func (c CommandType) String() string {
-	return [...]string{"unknown", "name", "msg", "acc", "login", "passwd", "info", "who", "quit"}[c]
-}
-
-// MatchCommandTypeStringToCommandType is used to mach a received command as a string to the CommandType used to communicate the command.
-func MatchCommandTypeStringToCommandType(s string) CommandType {
+// CommandTypeFromString is used to mach a received command as a string to the CommandType used to communicate the command.
+func CommandTypeFromString(s string) CommandType {
 	for currentCommandType := Unknown; currentCommandType <= Quit; currentCommandType++ {
 		if currentCommandType.String() == s {
 			return currentCommandType
 		}
 	}
 	return Unknown
+}
+
+// String implements the string variants of CommandType.
+func (c CommandType) String() string {
+	commandTypeToStringMapping := []string{"unknown", "name", "msg", "acc", "login", "passwd", "info", "who", "quit"}
+	if c < 0 || int(c) > len(commandTypeToStringMapping)-1 {
+		return strconv.Itoa(int(c))
+	}
+	return commandTypeToStringMapping[c]
 }
 
 // Command represents a command a user wants to be executed.

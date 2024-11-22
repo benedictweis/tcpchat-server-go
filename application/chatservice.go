@@ -37,7 +37,7 @@ func NewChatService(sessionRepository domain.SessionRepository, userRepository d
 }
 
 func (c BasicChatService) SendMessageToSessionFromServer(sessionID string, message string) {
-	c.sendMessageToSession(sessionID, fmt.Sprintf("[plugin] %s", message))
+	c.sendMessageToSession(sessionID, fmt.Sprintf("[server] %s", message))
 }
 
 func (c BasicChatService) sendMessageToSession(sessionID string, message string) {

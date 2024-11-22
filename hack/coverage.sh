@@ -16,7 +16,8 @@ go test ./... -v -coverprofile coverage/all
 go tool cover -html=coverage/all -o coverage/index.html
 go tool cover -func=coverage/all > coverage/output
 
-ACTUAL_CORVERAGE=$(grep -E 'total:\s+\(statements\)\s+(\d{1,2}\.\d{1,2})%' coverage/output | sed -n 's/.*\([0-9]\{1,2\}\.[0-9]\{1,2\}\)%.*/\1/p')
+
+ACTUAL_CORVERAGE=$(grep -E 'total:\s+\(statements\)\s+(\d{1,2}\.\d{1,2})%' coverage/output |  sed -n 's/^[^0-9]*\([0-9]\{1,2\}\.[0-9]\{1,2\}\)%.*/\1/p')
 
 result=$(echo "$ACTUAL_CORVERAGE >= $EXPECTED_COVERAGE" | bc)
 

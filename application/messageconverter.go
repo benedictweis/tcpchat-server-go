@@ -43,7 +43,7 @@ func ConvertMessages(ctx context.Context, incomingMessages <-chan MessageResult,
 				commandSplit := strings.Fields(command)
 				commandType := commandSplit[0]
 				commandArgs := commandSplit[1:]
-				commands <- domain.Command{SessionID: incomingMessage.SessionID, CommandType: domain.MatchCommandTypeStringToCommandType(commandType), Arguments: commandArgs}
+				commands <- domain.Command{SessionID: incomingMessage.SessionID, CommandType: domain.CommandTypeFromString(commandType), Arguments: commandArgs}
 			} else {
 				textMessages <- domain.TextMessage{SessionID: incomingMessage.SessionID, Message: message}
 			}

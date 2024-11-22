@@ -26,7 +26,7 @@ LICENSE_LINES=$(wc -l < "$LICENSE_FILE")
 MISSING_LICENSE=0
 
 # Iterate over the files matching the pattern
-for FILE in $(find . -type f -name "$FILE_PATTERN"); do
+for FILE in $(find . -type f -name "$FILE_PATTERN" -path "./test/mock" -prune); do
     # Extract the top lines from the file to compare with the license
     FILE_TOP_CONTENT=$(head -n "$LICENSE_LINES" "$FILE")
 

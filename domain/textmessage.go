@@ -10,3 +10,7 @@ type TextMessage struct {
 	SessionID string
 	Message   string
 }
+
+func NewTextMessage(sessionID string, message string) *TextMessage {
+	return &TextMessage{SessionID: sessionID, Message: message}
+}
